@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Internet Map — Cyanix AI</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════
+       GALAXY VIEW — Pre-login / Landing
+  ══════════════════════════════════════════ -->
+  <div id="galaxy-view" class="view active">
+    <canvas id="galaxy-canvas"></canvas>
+
+    <!-- HUD Overlay -->
+    <div id="hud">
+      <div id="hud-top">
+        <div id="hud-title">
+          <div class="hud-eyebrow">CYANIX AI PRESENTS</div>
+          <h1 id="main-title">INTERNET<br/>MAP</h1>
+          <div class="hud-tagline">NAVIGATE THE DIGITAL UNIVERSE</div>
+        </div>
+        <div id="hud-stats">
+          <div class="stat-block">
+            <span class="stat-value" id="stat-sites">1,847,293</span>
+            <span class="stat-label">SITES MAPPED</span>
+          </div>
+          <div class="stat-sep"></div>
+          <div class="stat-block">
+            <span class="stat-value">8</span>
+            <span class="stat-label">CLUSTERS</span>
+          </div>
+          <div class="stat-sep"></div>
+          <div class="stat-block">
+            <span class="stat-value blink-slow">◉ LIVE</span>
+            <span class="stat-label">STATUS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cluster Legend -->
+      <div id="cluster-legend">
+        <div class="legend-title">ACTIVE CLUSTERS</div>
+        <div id="legend-items"></div>
+      </div>
+
+      <!-- Layer Panel -->
+      <div id="layer-panel">
+        <div class="layer-title">DEPTH LAYERS</div>
+        <div class="layer-list">
+          <div class="layer-item active" data-layer="1">
+            <span class="layer-dot" style="background:#00f5ff"></span>
+            <span>LAYER 1 — POPULAR</span>
+          </div>
+          <div class="layer-item" data-layer="2">
+            <span class="layer-dot" style="background:#a855f7"></span>
+            <span>LAYER 2 — NICHE</span>
+          </div>
+          <div class="layer-item" data-layer="3">
+            <span class="layer-dot" style="background:#f59e0b"></span>
+            <span>LAYER 3 — WEIRD</span>
+          </div>
+          <div class="layer-item" data-layer="4">
+            <span class="layer-dot" style="background:#374151"></span>
+            <span>LAYER 4 — ARCHIVED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls hint -->
+      <div id="controls-hint">
+        <span>⟳ DRAG TO ROTATE</span>
+        <span>⊕ SCROLL TO ZOOM</span>
+        <span>◎ CLICK A STAR</span>
+      </div>
+    </div>
+
+    <!-- Hover Tooltip -->
+    <div id="galaxy-tooltip">
+      <div class="tt-name"></div>
+      <div class="tt-cluster"></div>
+      <div class="tt-url"></div>
+      <div class="tt-hint">CLICK TO VISIT</div>
+    </div>
+
+    <!-- Enter CTA -->
+    <div id="enter-cta">
+      <button id="enter-btn">
+        <span class="btn-inner">ENTER THE MAP</span>
+        <span class="btn-glow"></span>
+      </button>
+      <p class="enter-sub">Sign in to explore with Cyanix AI</p>
+    </div>
+
+    <!-- Scanline overlay -->
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       AUTH OVERLAY
+  ══════════════════════════════════════════ -->
+  <div id="auth-overlay" class="hidden">
+    <div id="auth-modal">
+      <div class="auth-header">
+        <div class="auth-logo">◈ CYANIX AI</div>
+        <div class="auth-sub">INTERNET MAP ACCESS</div>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="signin">SIGN IN</button>
+        <button class="auth-tab" data-tab="signup">SIGN UP</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <div id="form-signin" class="auth-form active">
+        <div class="input-group">
+          <label>EMAIL</label>
+          <input type="email" id="signin-email" placeholder="commander@galaxy.io" class="auth-input" />
+        </div>
+        <div class="input-group">
+          <label>PASSWORD</label>
+          <input type="password" id="signin-password" placeholder="••••••••" class="auth-input" />
+        </div>
+        <button id="signin-btn" class="auth-submit">
+          <span class="btn-text">ACCESS MAP</span>
+          <span class="btn-loader hidden">◌ CONNECTING...</span>
+        </button>
+        <div id="signin-error" class="auth-msg error hidden"></div>
+      </div>
+
+      <!-- Sign Up Form -->
+      <div id="form-signup" class="auth-form">
+        <div class="input-group">
+          <label>EMAIL</label>
+          <input type="email" id="signup-email" placeholder="commander@galaxy.io" class="auth-input" />
+        </div>
+        <div class="input-group">
+          <label>PASSWORD</label>
+          <input type="password" id="signup-password" placeholder="••••••••" class="auth-input" />
+        </div>
+        <div class="input-group">
+          <label>CONFIRM PASSWORD</label>
+          <input type="password" id="signup-confirm" placeholder="••••••••" class="auth-input" />
+        </div>
+        <button id="signup-btn" class="auth-submit">
+          <span class="btn-text">CREATE ACCOUNT</span>
+          <span class="btn-loader hidden">◌ CREATING...</span>
+        </button>
+        <div id="signup-error" class="auth-msg error hidden"></div>
+        <div id="signup-success" class="auth-msg success hidden">Check your email to confirm ✓</div>
+      </div>
+
+      <button id="auth-close">✕ CLOSE</button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════
+       COBWEB VIEW — Post-login
+  ══════════════════════════════════════════ -->
+  <div id="cobweb-view" class="view hidden">
+
+    <!-- Particle background canvas -->
+    <canvas id="cobweb-bg-canvas"></canvas>
+
+    <!-- D3 Force Graph SVG -->
+    <svg id="cobweb-svg">
+      <defs>
+        <filter id="glow-filter">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="glow-strong">
+          <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <g id="cobweb-links"></g>
+      <g id="cobweb-nodes"></g>
+    </svg>
+
+    <!-- Top Nav -->
+    <nav id="cobweb-nav">
+      <div id="cobweb-brand">
+        <span class="brand-icon">◈</span>
+        <span class="brand-name">INTERNET MAP</span>
+        <span class="brand-powered">POWERED BY CYANIX AI</span>
+      </div>
+      <div id="cobweb-user">
+        <span id="user-email-display"></span>
+        <button id="signout-btn">SIGN OUT</button>
+      </div>
+    </nav>
+
+    <!-- Central Search Interface -->
+    <div id="search-core" class="search-idle">
+      <div id="search-ring-outer"></div>
+      <div id="search-ring-mid"></div>
+      <div id="search-ring-inner"></div>
+
+      <div id="search-box">
+        <div id="search-prompt-text">EXPLORE THE INTERNET</div>
+        <div id="search-input-row">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="What do you want to discover?"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="search-btn" title="Search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+        <div id="quick-searches">
+          <span class="quick-tag" data-q="best AI tools 2025">AI Tools</span>
+          <span class="quick-tag" data-q="top gaming communities">Gaming</span>
+          <span class="quick-tag" data-q="underground internet communities">Dark Web</span>
+          <span class="quick-tag" data-q="top startups 2025">Startups</span>
+          <span class="quick-tag" data-q="news and media sites">News</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Answer Banner -->
+    <div id="ai-answer" class="hidden">
+      <span class="ai-label">◈ CYANIX AI</span>
+      <p id="ai-answer-text"></p>
+      <button id="new-search-btn">NEW SEARCH ↺</button>
+    </div>
+
+    <!-- Node Info Panel -->
+    <div id="node-panel" class="hidden">
+      <button id="node-panel-close">✕</button>
+      <div class="np-category" id="np-category"></div>
+      <div class="np-name" id="np-name"></div>
+      <p class="np-desc" id="np-desc"></p>
+      <a class="np-link" id="np-link" href="#" target="_blank" rel="noopener noreferrer">
+        VISIT SITE ↗
+      </a>
+    </div>
+
+    <!-- Loading state -->
+    <div id="cobweb-loading" class="hidden">
+      <div class="loader-rings">
+        <div class="lr lr1"></div>
+        <div class="lr lr2"></div>
+        <div class="lr lr3"></div>
+      </div>
+      <div id="loading-label">CYANIX AI MAPPING THE INTERNET...</div>
+    </div>
+
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- App -->
+  <script src="JavaScript.js"></script>
+</body>
+</html>
