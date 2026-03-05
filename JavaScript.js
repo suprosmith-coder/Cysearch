@@ -410,10 +410,12 @@ function _camUpdate(camera) {
   camera.lookAt(0,0,0);
 }
 
+let _dragMoved = false;
+
 function _bindGalaxyEvents(canvas, renderer, camera, raycaster) {
   // Mouse drag
   canvas.addEventListener('mousedown', e => {
-    _isDragging = true; _autoRot = false;
+    _isDragging = true; _autoRot = false; _dragMoved = false;
     _prevMouse = {x:e.clientX, y:e.clientY};
   });
   window.addEventListener('mouseup', () => { _isDragging = false; _autoRot = true; });
@@ -423,8 +425,10 @@ function _bindGalaxyEvents(canvas, renderer, camera, raycaster) {
     _ttMouse.x =  ((e.clientX-rect.left)/rect.width)*2-1;
     _ttMouse.y = -((e.clientY-rect.top)/rect.height)*2+1;
     if (_isDragging) {
-      _tSph.theta -= (e.clientX-_prevMouse.x)*.005;
-      _tSph.phi    = Math.max(.15, Math.min(Math.PI-.15, _tSph.phi + (e.clientY-_prevMouse.y)*.005));
+      const dx = e.clientX-_prevMouse.x, dy = e.clientY-_prevMouse.y;
+      if (Math.hypot(dx,dy) > 4) _dragMoved = true;
+      _tSph.theta -= dx*.005;
+      _tSph.phi    = Math.max(.15, Math.min(Math.PI-.15, _tSph.phi + dy*.005));
       _prevMouse = {x:e.clientX, y:e.clientY};
     }
   });
@@ -435,19 +439,42 @@ function _bindGalaxyEvents(canvas, renderer, camera, raycaster) {
   }, {passive:false});
 
   canvas.addEventListener('click', e => {
+    // Don't fire on drag release
+    if (_dragMoved) return;
+
     const rect = canvas.getBoundingClientRect();
     const v = new THREE.Vector2(
       ((e.clientX-rect.left)/rect.width)*2-1,
       -((e.clientY-rect.top)/rect.height)*2+1
     );
     raycaster.setFromCamera(v, camera);
-    for (const {mesh,site} of _interactable) {
-      if (!mesh.visible) continue;
-      if (raycaster.intersectObject(mesh).length>0) {
-        if (site.u && site.u!=='#') window.open(site.u,'_blank','noopener');
+
+    // Check if clicked on a star
+    for (const p of _interactable) {
+      if (!p.mesh.visible) continue;
+      if (raycaster.intersectObject(p.mesh).length > 0) {
+        if (_locked && _locked.site === p.site) {
+          // Already locked on this — launch it
+          if (p.site.u && p.site.u !== '#') window.open(p.site.u, '_blank', 'noopener');
+        } else {
+          // Lock on
+          _locked = p;
+          _showLockOn(p, camera, renderer.domElement);
+          // Stop auto-rotate and zoom slightly toward it
+          _autoRot = false;
+          const wpos = p.mesh.getWorldPosition(new THREE.Vector3()).normalize();
+          _tSph.theta = Math.atan2(wpos.x, wpos.z);
+          _tSph.phi   = Math.acos(Math.max(-1, Math.min(1, wpos.y)));
+          _tSph.r     = Math.max(2.5, _sph.r * 0.75);
+          setTimeout(() => { _autoRot = true; }, 5000);
+        }
         return;
       }
     }
+
+    // Clicked empty space — release lock
+    _locked = null;
+    _hideLockOn();
   });
 
   // Touch
@@ -477,6 +504,7 @@ function _bindGalaxyEvents(canvas, renderer, camera, raycaster) {
 }
 
 let _hovered = null;
+let _locked  = null; // currently locked-on target
 function _galaxyLoop(renderer, scene, camera, raycaster) {
   let t0 = 0;
   function loop(ts) {
@@ -498,18 +526,25 @@ function _galaxyLoop(renderer, scene, camera, raycaster) {
       if (c.userData.isBg) c.rotation.y = t*.007;
     });
 
-    // Hover detection
-    raycaster.setFromCamera(_ttMouse, camera);
-    let found = null;
-    for (const p of _interactable) {
-      if (!p.mesh.visible) continue;
-      if (raycaster.intersectObject(p.mesh).length>0) { found=p; break; }
+    // Hover detection (only when nothing locked)
+    if (!_locked) {
+      raycaster.setFromCamera(_ttMouse, camera);
+      let found = null;
+      for (const p of _interactable) {
+        if (!p.mesh.visible) continue;
+        if (raycaster.intersectObject(p.mesh).length>0) { found=p; break; }
+      }
+      if (found !== _hovered) {
+        _hovered = found;
+        _updateTooltip(found, camera, renderer.domElement);
+      }
+    } else {
+      // Keep lock-on panel position updated as galaxy rotates
+      _updateLockOnPos(_locked, camera, renderer.domElement);
+      _hovered = null;
     }
-    if (found !== _hovered) {
-      _hovered = found;
-      _updateTooltip(found, camera, renderer.domElement);
-    }
-    document.getElementById('galaxy-canvas').style.cursor = found?'pointer':(_isDragging?'grabbing':'grab');
+    document.getElementById('galaxy-canvas').style.cursor =
+      (_locked || _hovered) ? 'pointer' : (_isDragging ? 'grabbing' : 'grab');
 
     renderer.render(scene, camera);
   }
@@ -534,6 +569,128 @@ function _updateTooltip(found, camera, canvas) {
   tt.style.top  = Math.max(py-55, 10)+'px';
   tt.classList.remove('hidden');
 }
+
+// ── Lock-on system ────────────────────────────────
+function _showLockOn(p, camera, canvas) {
+  const { cluster: cl, site } = p;
+  const panel = document.getElementById('lockon-panel');
+
+  document.getElementById('lo-cluster').textContent = cl.label.toUpperCase();
+  document.getElementById('lo-cluster').style.color = cl.color;
+  document.getElementById('lo-name').textContent    = site.n;
+  document.getElementById('lo-name').style.textShadow = `0 0 18px ${cl.color}88`;
+  document.getElementById('lo-url').textContent     = site.u === '#' ? '[CLASSIFIED]' : site.u.replace('https://', '');
+  document.getElementById('lo-desc').textContent    = _siteDesc[site.n] || `A site in the ${cl.label} cluster.`;
+
+  const launchBtn = document.getElementById('lo-launch');
+  if (site.u && site.u !== '#') {
+    launchBtn.style.display     = 'flex';
+    launchBtn.style.borderColor = cl.color;
+    launchBtn.style.color       = cl.color;
+    launchBtn.style.boxShadow   = `0 0 14px ${cl.color}44`;
+    launchBtn.onclick = () => window.open(site.u, '_blank', 'noopener');
+  } else {
+    launchBtn.style.display = 'none';
+  }
+
+  document.querySelectorAll('.lo-corner').forEach(c => c.style.borderColor = cl.color);
+  document.getElementById('lo-ring').style.borderColor  = cl.color + '55';
+  document.getElementById('lo-dot').style.background    = cl.color;
+  document.getElementById('lo-dot').style.boxShadow     = `0 0 8px ${cl.color}`;
+
+  panel.style.display   = 'flex';
+  panel.style.opacity   = '0';
+  panel.style.transform = 'translate(-50%,-50%) scale(0.85)';
+  requestAnimationFrame(() => {
+    panel.style.transition = 'opacity 0.22s ease, transform 0.3s cubic-bezier(.34,1.56,.64,1)';
+    panel.style.opacity    = '1';
+    panel.style.transform  = 'translate(-50%,-50%) scale(1)';
+  });
+  _updateLockOnPos(p, camera, canvas);
+}
+
+function _hideLockOn() {
+  const panel = document.getElementById('lockon-panel');
+  panel.style.opacity   = '0';
+  panel.style.transform = 'translate(-50%,-50%) scale(0.9)';
+  setTimeout(() => { panel.style.display = 'none'; }, 220);
+}
+
+function _updateLockOnPos(p, camera, canvas) {
+  const panel = document.getElementById('lockon-panel');
+  if (panel.style.display === 'none') return;
+  const wpos = p.mesh.getWorldPosition(new THREE.Vector3());
+  wpos.project(camera);
+  const rect = canvas.getBoundingClientRect();
+  const px = (wpos.x + 1) / 2 * rect.width  + rect.left;
+  const py = (1 - (wpos.y + 1) / 2) * rect.height + rect.top;
+  const pw = 270, ph = 200;
+  panel.style.left = Math.max(pw/2+12, Math.min(window.innerWidth  - pw/2 - 12, px)) + 'px';
+  panel.style.top  = Math.max(ph/2+12, Math.min(window.innerHeight - ph/2 - 80, py)) + 'px';
+}
+
+const _siteDesc = {
+  'Twitter/X':'Real-time social network for news, takes, and viral moments.',
+  'Instagram':'Photo and video sharing — 2 billion monthly active users.',
+  'TikTok':'Short-form video app, the most downloaded app on the planet.',
+  'Reddit':'Massive forum network with communities for every topic imaginable.',
+  'Facebook':'The world\'s largest social network with over 3 billion users.',
+  'LinkedIn':'Professional networking and job search platform.',
+  'Discord':'Voice, video and text chat built for communities and gaming.',
+  'Snapchat':'Disappearing messages and stories for close friends.',
+  'Threads':'Meta\'s Twitter rival — built on the Instagram network.',
+  'Mastodon':'Open-source federated social network. You own your data.',
+  'Tumblr':'Microblogging for creatives, fandoms and niche communities.',
+  'ChatGPT':'OpenAI\'s flagship AI chatbot — the one that started the wave.',
+  'Claude':'Anthropic\'s AI assistant, known for safety and long context.',
+  'Gemini':'Google\'s multimodal AI — built into Search and Workspace.',
+  'Cysearch':'You\'re already here. The galaxy-style map of the internet.',
+  'Perplexity':'AI-powered search that actually cites its sources.',
+  'Midjourney':'The most popular AI image generator — runs inside Discord.',
+  'Runway':'AI video generation — text to film in seconds.',
+  'ElevenLabs':'Ultra-realistic AI voice cloning and text-to-speech.',
+  'Cursor':'AI-first code editor built on top of VS Code.',
+  'Steam':'Valve\'s PC gaming platform with over 50,000 games.',
+  'Twitch':'Live game streaming platform — 30 million daily viewers.',
+  'Epic Games':'Fortnite maker and PC game store rival to Steam.',
+  'Roblox':'User-created game universe — huge with kids and teens.',
+  'Xbox':'Microsoft\'s gaming brand covering console, PC and cloud.',
+  'PlayStation':'Sony\'s console gaming platform and digital storefront.',
+  'GOG':'DRM-free game store. You truly own what you buy.',
+  'itch.io':'Indie game marketplace — weird, experimental and wonderful.',
+  'BBC':'UK public broadcaster delivering global news since 1927.',
+  'Reuters':'Wire news agency trusted by journalists worldwide.',
+  'The Verge':'Sharp tech and culture journalism.',
+  'TechCrunch':'Startup and tech industry news, funding rounds and analysis.',
+  'Wired':'Long-form journalism on tech, science and society.',
+  'Hacker News':'Y Combinator\'s link aggregator — builders and founders only.',
+  'Bloomberg':'Financial and business news for professionals.',
+  'Substack':'Newsletter platform where writers build paid audiences.',
+  'Y Combinator':'The world\'s most powerful startup accelerator.',
+  'Vercel':'Frontend deployment platform — zero config, instant global.',
+  'Supabase':'Open source Firebase alternative built on Postgres.',
+  'Figma':'Browser-based design tool used by every major product team.',
+  'Notion':'All-in-one workspace for notes, wikis and databases.',
+  'Linear':'Sleek issue tracker built for modern engineering teams.',
+  'Product Hunt':'Daily launches of new apps, tools and startups.',
+  'Indie Hackers':'Community of solo founders building profitable businesses.',
+  'Khan Academy':'Free world-class education for anyone, anywhere.',
+  'Wikipedia':'The free encyclopedia — written by millions of volunteers.',
+  'YouTube':'Google\'s video platform. 500 hours uploaded every minute.',
+  'Coursera':'University courses online from Stanford, Yale and beyond.',
+  'Duolingo':'Gamified language learning with 500 million users.',
+  'Codecademy':'Learn to code interactively — HTML to machine learning.',
+  'Brilliant':'Math and science problem-solving for curious minds.',
+  'Amazon':'The world\'s largest e-commerce and cloud computing company.',
+  'Shopify':'Powers 10% of all e-commerce. Build a store in minutes.',
+  'Etsy':'Marketplace for handmade, vintage and creative goods.',
+  'eBay':'Pioneer online auction and marketplace since 1995.',
+  'Stripe':'Payment infrastructure powering the internet economy.',
+  'Gumroad':'Sell digital products and memberships directly to fans.',
+  '[REDACTED]':'ACCESS DENIED — SIGNAL ENCRYPTED',
+  '[UNKNOWN]':'ORIGIN UNVERIFIED — COORDINATES CLASSIFIED',
+  '[ENCRYPTED]':'DECRYPTION KEY REQUIRED — STAND BY',
+};
 
 // Counter animation
 function animCounter(id, target, ms) {
@@ -663,8 +820,12 @@ async function _doSearch() {
 
 // ── Call search edge function ─────────────────────
 async function _callSearchFn(query) {
-  if (!_session) throw new Error('Not signed in');
-  const token = _session.access_token;
+  // Always refresh session first to get a fresh token
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) throw new Error('Not signed in — please reload and log in again.');
+
+  // Use the fresh access_token, fall back to anon key if null
+  const token = session.access_token || SUPABASE_ANON;
 
   const res = await fetch(SEARCH_FUNC_URL, {
     method:  'POST',
@@ -677,8 +838,8 @@ async function _callSearchFn(query) {
   });
 
   if (!res.ok) {
-    const txt = await res.text().catch(()=>'');
-    throw new Error(`Edge function returned ${res.status}: ${txt.slice(0,120)}`);
+    const txt = await res.text().catch(() => '');
+    throw new Error(`Edge function returned ${res.status}: ${txt.slice(0, 160)}`);
   }
   return res.json();
 }
