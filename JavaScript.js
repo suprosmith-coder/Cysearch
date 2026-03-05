@@ -5,8 +5,8 @@
 const CONFIG = {
   // Supabase project credentials
   // Get these from: https://supabase.com/dashboard → Settings → API
-  SUPABASE_URL:      'https://tdbgpvscwaysndrloltl.supabase.co',        // e.g. https://xxxx.supabase.co
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkYmdwdnNjd2F5c25kcmxvbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3NDExMTQsImV4cCI6MjA4NTMxNzExNH0.5-UfXEYo8qbjmHPhuZdj4Yf3wqjEOtre4zQgDhDJShw',   // Your project's anon/public key
+  SUPABASE_URL:      'https://jeajdcozdeejhbirbmxq.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplYWpkY296ZGVlamhiaXJibXhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyODQxNjMsImV4cCI6MjA4Njg2MDE2M30.o4mtcjP37RymYar6w_mvFJYUaDrp9dBqubtwL-Yljps',
 
   // Edge function URL (auto-built from Supabase URL)
   get EDGE_CHAT_URL() {
@@ -14,18 +14,20 @@ const CONFIG = {
   }
 };
 // ═══════════════════════════════════════════════════
-// js/auth.js — Supabase Authentication
+// auth.js — Supabase Authentication (Email + OAuth)
 // ═══════════════════════════════════════════════════
 
 const Auth = (() => {
   let _client = null;
   let _session = null;
 
+  // Redirect back to this page after OAuth
+  const REDIRECT_URL = window.location.origin + window.location.pathname;
+
   // ── Init ──────────────────────────────────────────
   function init() {
     _client = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
-    // Listen for auth state changes
     _client.auth.onAuthStateChange((_event, session) => {
       _session = session;
       if (session) {
@@ -35,7 +37,6 @@ const Auth = (() => {
       }
     });
 
-    // Restore existing session
     _client.auth.getSession().then(({ data }) => {
       if (data.session) {
         _session = data.session;
@@ -46,69 +47,86 @@ const Auth = (() => {
     _bindUI();
   }
 
-  // ── Bind auth UI ──────────────────────────────────
+  // ── Bind UI ───────────────────────────────────────
   function _bindUI() {
-    // Tab switching
+    // Tabs
     document.querySelectorAll('.auth-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         const target = tab.dataset.tab;
         document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById(`form-${target}`).classList.add('active');
+        document.getElementById(`form-${target}`)?.classList.add('active');
       });
     });
 
-    // Sign in
-    document.getElementById('signin-btn').addEventListener('click', _handleSignIn);
-    document.getElementById('signin-password').addEventListener('keydown', e => {
+    // Email sign in
+    document.getElementById('signin-btn')?.addEventListener('click', _handleSignIn);
+    document.getElementById('signin-password')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') _handleSignIn();
     });
 
-    // Sign up
-    document.getElementById('signup-btn').addEventListener('click', _handleSignUp);
-    document.getElementById('signup-confirm').addEventListener('keydown', e => {
+    // Email sign up
+    document.getElementById('signup-btn')?.addEventListener('click', _handleSignUp);
+    document.getElementById('signup-confirm')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') _handleSignUp();
     });
 
-    // Close overlay
-    document.getElementById('auth-close').addEventListener('click', closeModal);
+    // OAuth buttons
+    document.getElementById('oauth-google')?.addEventListener('click',  () => _oauthSignIn('google'));
+    document.getElementById('oauth-github')?.addEventListener('click',  () => _oauthSignIn('github'));
+    document.getElementById('oauth-discord')?.addEventListener('click', () => _oauthSignIn('discord'));
 
-    // Click outside to close
-    document.getElementById('auth-overlay').addEventListener('click', e => {
+    // Close
+    document.getElementById('auth-close')?.addEventListener('click', closeModal);
+    document.getElementById('auth-overlay')?.addEventListener('click', e => {
       if (e.target === document.getElementById('auth-overlay')) closeModal();
     });
 
     // Sign out
-    document.getElementById('signout-btn').addEventListener('click', signOut);
+    document.getElementById('signout-btn')?.addEventListener('click', signOut);
   }
 
-  // ── Sign In ───────────────────────────────────────
+  // ── OAuth ─────────────────────────────────────────
+  async function _oauthSignIn(provider) {
+    const btn = document.getElementById(`oauth-${provider}`);
+    if (btn) { btn.disabled = true; btn.textContent = 'CONNECTING...'; }
+
+    const { error } = await _client.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: REDIRECT_URL },
+    });
+
+    if (error) {
+      console.error(`${provider} OAuth error:`, error.message);
+      if (btn) { btn.disabled = false; btn.textContent = _providerLabel(provider); }
+    }
+    // On success, browser redirects — no further action needed
+  }
+
+  function _providerLabel(provider) {
+    const labels = { google: '▲ CONTINUE WITH GOOGLE', github: '⌥ CONTINUE WITH GITHUB', discord: '◈ CONTINUE WITH DISCORD' };
+    return labels[provider] || provider.toUpperCase();
+  }
+
+  // ── Email Sign In ─────────────────────────────────
   async function _handleSignIn() {
     const email    = document.getElementById('signin-email').value.trim();
     const password = document.getElementById('signin-password').value;
     const errEl    = document.getElementById('signin-error');
     const btn      = document.getElementById('signin-btn');
 
-    if (!email || !password) {
-      _showError(errEl, 'Please fill in all fields.');
-      return;
-    }
+    if (!email || !password) { _showError(errEl, 'Please fill in all fields.'); return; }
 
     _setLoading(btn, true);
     _hideMsg(errEl);
 
     const { error } = await _client.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      _setLoading(btn, false);
-      _showError(errEl, error.message);
-    } else {
-      closeModal();
-    }
+    if (error) { _setLoading(btn, false); _showError(errEl, error.message); }
+    else { closeModal(); }
   }
 
-  // ── Sign Up ───────────────────────────────────────
+  // ── Email Sign Up ─────────────────────────────────
   async function _handleSignUp() {
     const email    = document.getElementById('signup-email').value.trim();
     const password = document.getElementById('signup-password').value;
@@ -117,31 +135,18 @@ const Auth = (() => {
     const sucEl    = document.getElementById('signup-success');
     const btn      = document.getElementById('signup-btn');
 
-    if (!email || !password || !confirm) {
-      _showError(errEl, 'Please fill in all fields.');
-      return;
-    }
-    if (password !== confirm) {
-      _showError(errEl, 'Passwords do not match.');
-      return;
-    }
-    if (password.length < 6) {
-      _showError(errEl, 'Password must be at least 6 characters.');
-      return;
-    }
+    if (!email || !password || !confirm) { _showError(errEl, 'Please fill in all fields.'); return; }
+    if (password !== confirm)            { _showError(errEl, 'Passwords do not match.');    return; }
+    if (password.length < 6)            { _showError(errEl, 'Minimum 6 characters.');       return; }
 
     _setLoading(btn, true);
     _hideMsg(errEl);
     _hideMsg(sucEl);
 
     const { error } = await _client.auth.signUp({ email, password });
-
     _setLoading(btn, false);
-    if (error) {
-      _showError(errEl, error.message);
-    } else {
-      sucEl.classList.remove('hidden');
-    }
+    if (error) { _showError(errEl, error.message); }
+    else { sucEl.classList.remove('hidden'); }
   }
 
   // ── Sign Out ──────────────────────────────────────
@@ -150,43 +155,23 @@ const Auth = (() => {
   }
 
   // ── Helpers ───────────────────────────────────────
-  function openModal() {
-    document.getElementById('auth-overlay').classList.remove('hidden');
-  }
+  function openModal()  { document.getElementById('auth-overlay').classList.remove('hidden'); }
+  function closeModal() { document.getElementById('auth-overlay').classList.add('hidden'); }
 
-  function closeModal() {
-    document.getElementById('auth-overlay').classList.add('hidden');
-  }
+  function _showError(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
+  function _hideMsg(el)        { el.classList.add('hidden'); }
 
-  function _showError(el, msg) {
-    el.textContent = msg;
-    el.classList.remove('hidden');
-  }
-  function _hideMsg(el) {
-    el.classList.add('hidden');
-  }
   function _setLoading(btn, loading) {
     const text   = btn.querySelector('.btn-text');
     const loader = btn.querySelector('.btn-loader');
     btn.disabled = loading;
-    if (loading) {
-      text?.classList.add('hidden');
-      loader?.classList.remove('hidden');
-      loader?.classList.add('visible');
-    } else {
-      text?.classList.remove('hidden');
-      loader?.classList.add('hidden');
-      loader?.classList.remove('visible');
-    }
+    text?.classList.toggle('hidden', loading);
+    loader?.classList.toggle('hidden', !loading);
+    loader?.classList.toggle('visible', loading);
   }
 
-  function getUser() {
-    return _session?.user ?? null;
-  }
-
-  function getClient() {
-    return _client;
-  }
+  function getUser()   { return _session?.user ?? null; }
+  function getClient() { return _client; }
 
   return { init, openModal, closeModal, signOut, getUser, getClient };
 })();

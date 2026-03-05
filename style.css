@@ -599,9 +599,80 @@ html, body {
   color: var(--red);
 }
 
-.btn-loader { display: none; }
-.btn-loader.visible { display: inline; }
-.btn-text.hidden { display: none; }
+/* OAuth Buttons */
+.oauth-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+}
+.oauth-btn.google {
+  background: rgba(66,133,244,0.08);
+  border-color: rgba(66,133,244,0.3);
+  color: #7eb3ff;
+}
+.oauth-btn.google:hover {
+  background: rgba(66,133,244,0.18);
+  border-color: rgba(66,133,244,0.6);
+  box-shadow: 0 0 16px rgba(66,133,244,0.25);
+}
+.oauth-btn.github {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.75);
+}
+.oauth-btn.github:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.35);
+}
+.oauth-btn.discord {
+  background: rgba(88,101,242,0.08);
+  border-color: rgba(88,101,242,0.35);
+  color: #a5aeff;
+}
+.oauth-btn.discord:hover {
+  background: rgba(88,101,242,0.2);
+  border-color: rgba(88,101,242,0.6);
+  box-shadow: 0 0 16px rgba(88,101,242,0.25);
+}
+.oauth-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Auth Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-ghost);
+  font-size: 9px;
+  letter-spacing: 3px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+
 
 
 /* ══════════════════════════════════
