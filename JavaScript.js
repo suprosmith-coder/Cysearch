@@ -162,7 +162,7 @@ async function emailSignIn() {
 
   if (!email || !pass) { showMsg(err, 'Fill in all fields.'); return; }
   btn.disabled = true; btn.textContent = 'CONNECTING...';
-  hideEl(err);
+  err.classList.add('hidden');
 
   const { error } = await _sb.auth.signInWithPassword({ email, password: pass });
   btn.disabled = false; btn.textContent = 'ACCESS MAP';
@@ -182,7 +182,7 @@ async function emailSignUp() {
   if (pass.length < 6)          { showMsg(err, 'Minimum 6 characters.'); return; }
 
   btn.disabled = true; btn.textContent = 'CREATING...';
-  hideEl(err); hideEl(ok);
+  err.classList.add('hidden'); ok.classList.add('hidden');
 
   const { error } = await _sb.auth.signUp({ email, password: pass });
   btn.disabled = false; btn.textContent = 'CREATE ACCOUNT';
@@ -480,12 +480,14 @@ function _bindGalaxyEvents(canvas, renderer, camera, raycaster) {
   // Touch
   let lastTD = null;
   canvas.addEventListener('touchstart', e => {
-    if (e.touches.length===1) { _isDragging=true; _autoRot=false; _prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY}; }
+    if (e.touches.length===1) { _isDragging=true; _autoRot=false; _dragMoved=false; _prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY}; }
   }, {passive:true});
   canvas.addEventListener('touchmove', e => {
     if (e.touches.length===1 && _isDragging) {
-      _tSph.theta -= (e.touches[0].clientX-_prevMouse.x)*.006;
-      _tSph.phi    = Math.max(.15,Math.min(Math.PI-.15,_tSph.phi+(e.touches[0].clientY-_prevMouse.y)*.006));
+      const dx = e.touches[0].clientX-_prevMouse.x, dy = e.touches[0].clientY-_prevMouse.y;
+      if (Math.hypot(dx,dy) > 4) _dragMoved = true;
+      _tSph.theta -= dx*.006;
+      _tSph.phi    = Math.max(.15,Math.min(Math.PI-.15,_tSph.phi+dy*.006));
       _prevMouse = {x:e.touches[0].clientX,y:e.touches[0].clientY};
     }
     if (e.touches.length===2) {
@@ -506,10 +508,9 @@ function _bindGalaxyEvents(canvas, renderer, camera, raycaster) {
 let _hovered = null;
 let _locked  = null; // currently locked-on target
 function _galaxyLoop(renderer, scene, camera, raycaster) {
-  let t0 = 0;
   function loop(ts) {
     requestAnimationFrame(loop);
-    const t = ts*.001;
+    const t = ts * 0.001;
 
     if (_autoRot) _tSph.theta += .001;
     _sph.theta += (_tSph.theta-_sph.theta)*.06;
@@ -820,18 +821,11 @@ async function _doSearch() {
 
 // ── Call search edge function ─────────────────────
 async function _callSearchFn(query) {
-  // Always refresh session first to get a fresh token
-  const { data: { session } } = await _sb.auth.getSession();
-  if (!session) throw new Error('Not signed in — please reload and log in again.');
-
-  // Use the fresh access_token, fall back to anon key if null
-  const token = session.access_token || SUPABASE_ANON;
-
   const res = await fetch(SEARCH_FUNC_URL, {
     method:  'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
       'apikey':        SUPABASE_ANON,
     },
     body: JSON.stringify({ query }),
@@ -932,9 +926,9 @@ function _cwSimulate() {
     node.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
   node.transition().duration(500).delay((_,i)=>i*25).attr('opacity',1);
-  link.transition().duration(700).delay(150).attr('opacity',d=>{
-    const s=typeof d.source==='object'?d.source:null;
-    return s?.isCenter?.5:.22;
+  link.transition().duration(700).delay(150).attr('opacity', d => {
+    const s = typeof d.source === 'object' ? d.source : null;
+    return s?.isCenter ? 0.5 : 0.22;
   });
 }
 
