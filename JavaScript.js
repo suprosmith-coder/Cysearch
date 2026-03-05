@@ -5,8 +5,8 @@
 const CONFIG = {
   // Supabase project credentials
   // Get these from: https://supabase.com/dashboard → Settings → API
-  SUPABASE_URL:      'https://jeajdcozdeejhbirbmxq.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplYWpkY296ZGVlamhiaXJibXhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyODQxNjMsImV4cCI6MjA4Njg2MDE2M30.o4mtcjP37RymYar6w_mvFJYUaDrp9dBqubtwL-Yljps',
+  SUPABASE_URL:      'https://tdbgpvscwaysndrloltl.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkYmdwdnNjd2F5c25kcmxvbHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3NDExMTQsImV4cCI6MjA4NTMxNzExNH0.5-UfXEYo8qbjmHPhuZdj4Yf3wqjEOtre4zQgDhDJShw',
 
   // Edge function URL (auto-built from Supabase URL)
   get EDGE_CHAT_URL() {
@@ -336,7 +336,9 @@ const Galaxy = (() => {
   // ── Public Init ───────────────────────────────────
   function init() {
     const canvas = document.getElementById('galaxy-canvas');
-    const W = canvas.clientWidth, H = canvas.clientHeight;
+    // Use window dimensions — canvas.clientWidth can return 0 before layout
+    const W = window.innerWidth;
+    const H = window.innerHeight;
 
     // Scene
     scene = new THREE.Scene();
@@ -345,8 +347,13 @@ const Galaxy = (() => {
     camera = new THREE.PerspectiveCamera(60, W / H, 0.01, 200);
     _updateCamera();
 
-    // Renderer
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    // Renderer — wrapped in try/catch in case WebGL is unavailable
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    } catch(e) {
+      console.error('WebGL init failed:', e);
+      return;
+    }
     renderer.setSize(W, H, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000008, 1);
@@ -561,8 +568,8 @@ const Galaxy = (() => {
     });
 
     window.addEventListener('mouseup', () => {
-      isDragging = true;
-      setTimeout(() => { isDragging = false; autoRotate = true; }, 50);
+      isDragging = false;
+      autoRotate = true;
     });
 
     canvas.addEventListener('mousemove', e => {
@@ -646,8 +653,8 @@ const Galaxy = (() => {
   }
 
   function _onResize() {
-    const canvas = renderer.domElement;
-    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
     renderer.setSize(W, H, false);
@@ -1178,8 +1185,11 @@ const Cobweb = (() => {
   // ── Galaxy ────────────────────────────────────────
   function _initGalaxy() {
     if (!galaxyInitialized) {
-      Galaxy.init();
-      galaxyInitialized = true;
+      // rAF ensures browser has completed layout before we read window dimensions
+      requestAnimationFrame(() => {
+        Galaxy.init();
+        galaxyInitialized = true;
+      });
     }
   }
 
