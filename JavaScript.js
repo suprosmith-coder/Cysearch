@@ -1,2520 +1,841 @@
-  // Get these from: https://supabase.com/dashboard → Settings → API
-// ═══════════════════════════════════════════════════
-// js/config.js — Fill in your credentials here
-  SUPABASE_URL:      'https://tdbgpvscwaysndrloltl.supabase.co',
-// ═══════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════
+   CYSEARCH — JavaScript.js
+   All modules in one file. New Supabase project.
+═══════════════════════════════════════════════════ */
 
-const CONFIG = {
-  // Supabase project credentials
-  // Get these from: https://supabase.com/dashboard → Settings → API
-  SUPABASE_URL:      'https://jeajdcozdeejhbirbmxq.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplYWpkY296ZGVlamhiaXJibXhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyODQxNjMsImV4cCI6MjA4Njg2MDE2M30.o4mtcjP37RymYar6w_mvFJYUaDrp9dBqubtwL-Yljps',
-  
-  // Edge function URL (auto-built from Supabase URL)
-  // Edge function URL (auto-built from Supabase URL)
-  get EDGE_CHAT_URL() {
-  get EDGE_CHAT_URL() {
-    return `${this.SUPABASE_URL}/functions/v1/chat`;
-    return `${this.SUPABASE_URL}/functions/v1/chat`;
-  }
+// ── CONFIG ────────────────────────────────────────
+const SUPABASE_URL     = 'https://jeajdcozdeejhbirbmxq.supabase.co';
+const SUPABASE_ANON    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImplYWpkY296ZGVlamhiaXJibXhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyODQxNjMsImV4cCI6MjA4Njg2MDE2M30.o4mtcjP37RymYar6w_mvFJYUaDrp9dBqubtwL-Yljps';
+const SEARCH_FUNC_URL  = `${SUPABASE_URL}/functions/v1/search`;
+const REDIRECT_URL     = window.location.href.split('?')[0];
+
+// ── CLUSTER DATA ──────────────────────────────────
+const CLUSTERS = [
+  { id:'social',    label:'Social Media', color:'#ff6b6b', x:-.28, y:.09, z:.12,
+    sites:[
+      {n:'Twitter/X',   u:'https://x.com',              l:1},
+      {n:'Instagram',   u:'https://instagram.com',       l:1},
+      {n:'TikTok',      u:'https://tiktok.com',          l:1},
+      {n:'Reddit',      u:'https://reddit.com',          l:1},
+      {n:'Facebook',    u:'https://facebook.com',        l:1},
+      {n:'LinkedIn',    u:'https://linkedin.com',        l:1},
+      {n:'Discord',     u:'https://discord.com',         l:2},
+      {n:'Snapchat',    u:'https://snapchat.com',        l:2},
+      {n:'Threads',     u:'https://threads.net',         l:2},
+      {n:'Mastodon',    u:'https://mastodon.social',     l:3},
+      {n:'Tumblr',      u:'https://tumblr.com',          l:3},
+    ]},
+  { id:'ai',        label:'AI Tools',     color:'#00f5ff', x:.03, y:.22, z:-.15,
+    sites:[
+      {n:'ChatGPT',     u:'https://chat.openai.com',     l:1},
+      {n:'Claude',      u:'https://claude.ai',           l:1},
+      {n:'Gemini',      u:'https://gemini.google.com',   l:1},
+      {n:'Cysearch',    u:'#',                           l:1},
+      {n:'Perplexity',  u:'https://perplexity.ai',       l:1},
+      {n:'Midjourney',  u:'https://midjourney.com',      l:2},
+      {n:'Runway',      u:'https://runwayml.com',        l:2},
+      {n:'ElevenLabs',  u:'https://elevenlabs.io',       l:2},
+      {n:'Cursor',      u:'https://cursor.sh',           l:2},
+    ]},
+  { id:'gaming',    label:'Gaming',       color:'#a855f7', x:.30, y:-.05, z:.04,
+    sites:[
+      {n:'Steam',       u:'https://store.steampowered.com', l:1},
+      {n:'Twitch',      u:'https://twitch.tv',           l:1},
+      {n:'Epic Games',  u:'https://epicgames.com',       l:1},
+      {n:'Roblox',      u:'https://roblox.com',          l:1},
+      {n:'Xbox',        u:'https://xbox.com',            l:2},
+      {n:'PlayStation', u:'https://playstation.com',     l:2},
+      {n:'GOG',         u:'https://gog.com',             l:2},
+      {n:'itch.io',     u:'https://itch.io',             l:3},
+      {n:'Newgrounds',  u:'https://newgrounds.com',      l:3},
+    ]},
+  { id:'news',      label:'News',         color:'#f59e0b', x:-.08, y:-.26, z:.10,
+    sites:[
+      {n:'BBC',         u:'https://bbc.com',             l:1},
+      {n:'Reuters',     u:'https://reuters.com',         l:1},
+      {n:'The Verge',   u:'https://theverge.com',        l:1},
+      {n:'TechCrunch',  u:'https://techcrunch.com',      l:1},
+      {n:'Wired',       u:'https://wired.com',           l:2},
+      {n:'Hacker News', u:'https://news.ycombinator.com',l:2},
+      {n:'Bloomberg',   u:'https://bloomberg.com',       l:2},
+      {n:'Substack',    u:'https://substack.com',        l:3},
+    ]},
+  { id:'darkweb',   label:'Dark Web',     color:'#475569', x:.20, y:.28, z:.18,
+    sites:[
+      {n:'[REDACTED]',  u:'#', l:4},
+      {n:'[UNKNOWN]',   u:'#', l:4},
+      {n:'[ENCRYPTED]', u:'#', l:4},
+    ]},
+  { id:'startups',  label:'Startups',     color:'#10b981', x:-.22, y:.18, z:-.09,
+    sites:[
+      {n:'Y Combinator',u:'https://ycombinator.com',    l:1},
+      {n:'Vercel',      u:'https://vercel.com',         l:1},
+      {n:'Supabase',    u:'https://supabase.com',       l:1},
+      {n:'Figma',       u:'https://figma.com',          l:1},
+      {n:'Notion',      u:'https://notion.so',          l:2},
+      {n:'Linear',      u:'https://linear.app',         l:2},
+      {n:'Product Hunt',u:'https://producthunt.com',    l:2},
+      {n:'Indie Hackers',u:'https://indiehackers.com',  l:3},
+    ]},
+  { id:'education', label:'Education',    color:'#3b82f6', x:.14, y:-.32, z:-.07,
+    sites:[
+      {n:'Khan Academy',u:'https://khanacademy.org',    l:1},
+      {n:'Wikipedia',   u:'https://wikipedia.org',      l:1},
+      {n:'YouTube',     u:'https://youtube.com',        l:1},
+      {n:'Coursera',    u:'https://coursera.org',       l:2},
+      {n:'Duolingo',    u:'https://duolingo.com',       l:2},
+      {n:'Codecademy',  u:'https://codecademy.com',     l:2},
+      {n:'Brilliant',   u:'https://brilliant.org',      l:3},
+    ]},
+  { id:'ecommerce', label:'E-Commerce',   color:'#f97316', x:-.36, y:-.14, z:-.04,
+    sites:[
+      {n:'Amazon',      u:'https://amazon.com',         l:1},
+      {n:'Shopify',     u:'https://shopify.com',        l:1},
+      {n:'Etsy',        u:'https://etsy.com',           l:1},
+      {n:'eBay',        u:'https://ebay.com',           l:2},
+      {n:'Stripe',      u:'https://stripe.com',         l:2},
+      {n:'Gumroad',     u:'https://gumroad.com',        l:3},
+    ]},
+];
+
+const CAT_COLORS = {
+  social:'#ff6b6b', ai:'#00f5ff', gaming:'#a855f7', news:'#f59e0b',
+  darkweb:'#475569', startups:'#10b981', education:'#3b82f6', ecommerce:'#f97316',
+  other:'#94a3b8', center:'#ffffff',
 };
+
+
+// ══════════════════════════════════════════════════
+// SUPABASE AUTH
+// ══════════════════════════════════════════════════
+let _sb = null;
+let _session = null;
+
+function sbInit() {
+  // supabase global comes from the CDN UMD bundle
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  _sb.auth.onAuthStateChange((event, session) => {
+    _session = session;
+    if (session) {
+      _onSignedIn(session.user);
+    } else {
+      _onSignedOut();
+    }
+  });
+
+  // Restore existing session silently
+  _sb.auth.getSession().then(({ data }) => {
+    if (data.session) {
+      _session = data.session;
+      _onSignedIn(data.session.user);
+    }
+  });
+}
+
+function _onSignedIn(user) {
+  // Show cobweb screen, hide galaxy
+  document.getElementById('screen-galaxy').style.display = 'none';
+  document.getElementById('screen-cobweb').style.display = 'block';
+  document.getElementById('auth-overlay').classList.add('hidden');
+  const lbl = document.getElementById('user-label');
+  if (lbl) lbl.textContent = user.email || user.user_metadata?.name || 'EXPLORER';
+  cobwebInit();
+}
+
+function _onSignedOut() {
+  document.getElementById('screen-cobweb').style.display = 'none';
+  document.getElementById('screen-galaxy').style.display = 'block';
+}
+
+async function oauthLogin(provider) {
+  const btn = document.getElementById('ob-' + provider);
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  await _sb.auth.signInWithOAuth({ provider, options: { redirectTo: REDIRECT_URL } });
+}
+
+async function emailSignIn() {
+  const email = document.getElementById('si-email').value.trim();
+  const pass  = document.getElementById('si-pass').value;
+  const err   = document.getElementById('si-err');
+  const btn   = document.getElementById('si-btn');
+
+  if (!email || !pass) { showMsg(err, 'Fill in all fields.'); return; }
+  btn.disabled = true; btn.textContent = 'CONNECTING...';
+  hideEl(err);
+
+  const { error } = await _sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'ACCESS MAP';
+  if (error) showMsg(err, error.message);
+}
+
+async function emailSignUp() {
+  const email = document.getElementById('su-email').value.trim();
+  const pass  = document.getElementById('su-pass').value;
+  const conf  = document.getElementById('su-conf').value;
+  const err   = document.getElementById('su-err');
+  const ok    = document.getElementById('su-ok');
+  const btn   = document.getElementById('su-btn');
+
+  if (!email || !pass || !conf) { showMsg(err, 'Fill in all fields.'); return; }
+  if (pass !== conf)            { showMsg(err, 'Passwords do not match.'); return; }
+  if (pass.length < 6)          { showMsg(err, 'Minimum 6 characters.'); return; }
+
+  btn.disabled = true; btn.textContent = 'CREATING...';
+  hideEl(err); hideEl(ok);
+
+  const { error } = await _sb.auth.signUp({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'CREATE ACCOUNT';
+  if (error) showMsg(err, error.message);
+  else { ok.classList.remove('hidden'); ok.textContent = '✓ Check your email to confirm'; }
+}
+
+// ── Auth UI bindings ──────────────────────────────
+function authBindUI() {
+  // Tab switching
+  document.querySelectorAll('.atab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.atab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.aform').forEach(f => f.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Enter button
+  document.getElementById('enter-btn').addEventListener('click', () => {
+    if (_session) { _onSignedIn(_session.user); }
+    else { document.getElementById('auth-overlay').classList.remove('hidden'); }
+  });
+
+  // Close
+  document.getElementById('auth-close').addEventListener('click', () => {
+    document.getElementById('auth-overlay').classList.add('hidden');
+  });
+  document.getElementById('auth-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('auth-overlay'))
+      document.getElementById('auth-overlay').classList.add('hidden');
+  });
+
+  // Email forms
+  document.getElementById('si-btn').addEventListener('click', emailSignIn);
+  document.getElementById('si-pass').addEventListener('keydown', e => { if (e.key==='Enter') emailSignIn(); });
+  document.getElementById('su-btn').addEventListener('click', emailSignUp);
+  document.getElementById('su-conf').addEventListener('keydown', e => { if (e.key==='Enter') emailSignUp(); });
+
+  // OAuth
+  document.getElementById('ob-google').addEventListener('click',  () => oauthLogin('google'));
+  document.getElementById('ob-github').addEventListener('click',  () => oauthLogin('github'));
+  document.getElementById('ob-discord').addEventListener('click', () => oauthLogin('discord'));
+
+  // Sign out
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    await _sb.auth.signOut();
+  });
+}
+
+
+// ══════════════════════════════════════════════════
+// THREE.JS GALAXY
+// ══════════════════════════════════════════════════
+let _three = {};
+let _activeLayer = 1;
+let _interactable = []; // { mesh, cluster, site }
+let _isDragging = false, _prevMouse = {x:0,y:0};
+let _sph = { theta:.3, phi:1.2, r:5 };
+let _tSph = { ..._sph };
+let _autoRot = true;
+let _ttMouse = new THREE.Vector2();
+
+function galaxyInit() {
+  const canvas = document.getElementById('galaxy-canvas');
+  const W = window.innerWidth, H = window.innerHeight;
+
+  const scene    = new THREE.Scene();
+  const camera   = new THREE.PerspectiveCamera(60, W/H, 0.01, 200);
+  let renderer;
+
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  } catch(e) {
+    console.error('WebGL not available:', e);
+    return;
   }
-};
-// ═══════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════
-// auth.js — Supabase Authentication (Email + OAuth)
-// auth.js — Supabase Authentication (Email + OAuth)
-// ═══════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.setClearColor(0x000008, 1);
 
-const Auth = (() => {
-const Auth = (() => {
-  let _client = null;
-  let _client = null;
-  let _session = null;
+  const raycaster = new THREE.Raycaster();
+  raycaster.params.Points.threshold = 0.06;
 
-  let _session = null;
+  _three = { scene, camera, renderer, raycaster };
 
-  // Redirect back to this page after OAuth
-  // Redirect back to this page after OAuth
-  const REDIRECT_URL = window.location.origin + window.location.pathname;
-  const REDIRECT_URL = window.location.origin + window.location.pathname;
+  _buildBgStars(scene);
+  _buildClusters(scene);
+  _buildLegendUI();
+  _bindGalaxyEvents(canvas, renderer, camera, raycaster);
+  _galaxyLoop(renderer, scene, camera, raycaster);
+}
 
+function _glowTex(color, size=64) {
+  const c   = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const g   = ctx.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+  g.addColorStop(0,   color);
+  g.addColorStop(0.3, color+'99');
+  g.addColorStop(0.7, color+'22');
+  g.addColorStop(1,   'transparent');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,size,size);
+  return new THREE.CanvasTexture(c);
+}
 
-  // ── Init ──────────────────────────────────────────
-  // ── Init ──────────────────────────────────────────
-  function init() {
-  function init() {
-    _client = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-    _client = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+function _buildBgStars(scene) {
+  const N   = 6000;
+  const pos = new Float32Array(N*3);
+  const col = new Float32Array(N*3);
+  for (let i=0; i<N; i++) {
+    const t = Math.random()*Math.PI*2, p = Math.acos(2*Math.random()-1), r = 20+Math.random()*60;
+    pos[i*3]   = r*Math.sin(p)*Math.cos(t);
+    pos[i*3+1] = r*Math.sin(p)*Math.sin(t);
+    pos[i*3+2] = r*Math.cos(p);
+    const b = .4+Math.random()*.6;
+    col[i*3]=b; col[i*3+1]=b; col[i*3+2]=Math.min(1,b+.2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(col,3));
+  const mat = new THREE.PointsMaterial({
+    size:.07, vertexColors:true, transparent:true, opacity:.7,
+    map:_glowTex('#ffffff',32), blending:THREE.AdditiveBlending, depthWrite:false,
+  });
+  const stars = new THREE.Points(geo,mat);
+  stars.userData.isBg = true;
+  scene.add(stars);
+}
 
+function _buildClusters(scene) {
+  CLUSTERS.forEach(cl => {
+    const g = new THREE.Group();
+    g.position.set(cl.x*14, cl.y*14, cl.z*14);
+    g.userData.clusterId = cl.id;
 
-    _client.auth.onAuthStateChange((_event, session) => {
-    _client.auth.onAuthStateChange((_event, session) => {
-      _session = session;
-      _session = session;
-      if (session) {
-      if (session) {
-        window.dispatchEvent(new CustomEvent('auth:signin', { detail: session.user }));
-        window.dispatchEvent(new CustomEvent('auth:signin', { detail: session.user }));
-      } else {
-      } else {
-        window.dispatchEvent(new CustomEvent('auth:signout'));
-        window.dispatchEvent(new CustomEvent('auth:signout'));
+    // Core glow
+    const cGeo = new THREE.BufferGeometry();
+    cGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0]),3));
+    const cMat = new THREE.PointsMaterial({
+      size:.28, map:_glowTex(cl.color,128), transparent:true, opacity:1,
+      blending:THREE.AdditiveBlending, depthWrite:false,
+    });
+    g.add(new THREE.Points(cGeo, cMat));
+
+    // Nebula sphere
+    const nGeo = new THREE.SphereGeometry(.55,16,16);
+    const nMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(cl.color), transparent:true, opacity:.04,
+      blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.BackSide,
+    });
+    g.add(new THREE.Mesh(nGeo, nMat));
+
+    // Sites
+    cl.sites.forEach(site => {
+      const ang  = Math.random()*Math.PI*2;
+      const incl = (Math.random()-.5)*Math.PI*.55;
+      const d    = .18+Math.random()*.48;
+      const sx = d*Math.cos(ang)*Math.cos(incl);
+      const sy = d*Math.sin(incl);
+      const sz = d*Math.sin(ang)*Math.cos(incl);
+
+      const sGeo = new THREE.BufferGeometry();
+      sGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([sx,sy,sz]),3));
+      const sSize = site.l===1 ? .11 : site.l===2 ? .075 : .05;
+      const sOpa  = site.l===1 ? .95 : site.l===2 ? .65 : .38;
+      const sMat  = new THREE.PointsMaterial({
+        size:sSize, map:_glowTex(cl.color,64), transparent:true, opacity:sOpa,
+        blending:THREE.AdditiveBlending, depthWrite:false,
+      });
+      const pt = new THREE.Points(sGeo, sMat);
+      pt.userData = { cluster:cl, site, layer:site.l };
+      g.add(pt);
+      _interactable.push({ mesh:pt, cluster:cl, site });
+    });
+
+    scene.add(g);
+  });
+}
+
+function _buildLegendUI() {
+  const wrap = document.getElementById('legend-items');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  CLUSTERS.forEach(cl => {
+    const div = document.createElement('div');
+    div.className = 'leg-item';
+    div.innerHTML = `<span class="leg-dot" style="background:${cl.color};box-shadow:0 0 5px ${cl.color}"></span>${cl.label.toUpperCase()}`;
+    div.addEventListener('click', () => {
+      const g = _three.scene?.children.find(c => c.userData.clusterId===cl.id);
+      if (g) {
+        const pos = g.position.clone().normalize();
+        _tSph.theta = Math.atan2(pos.x, pos.z);
+        _tSph.phi   = Math.acos(Math.max(-1,Math.min(1,pos.y)));
+        _tSph.r = 2.8;
+        _autoRot = false;
+        setTimeout(() => { _autoRot = true; }, 3500);
       }
-      }
     });
+    wrap.appendChild(div);
+  });
 
-    });
-
-    _client.auth.getSession().then(({ data }) => {
-    _client.auth.getSession().then(({ data }) => {
-      if (data.session) {
-      if (data.session) {
-        _session = data.session;
-        _session = data.session;
-        window.dispatchEvent(new CustomEvent('auth:signin', { detail: data.session.user }));
-      }
-        window.dispatchEvent(new CustomEvent('auth:signin', { detail: data.session.user }));
-    });
-
-      }
-    _bindUI();
-  }
-
-  // ── Bind UI ───────────────────────────────────────
-    });
-
-  function _bindUI() {
-    _bindUI();
-  }
-
-  // ── Bind UI ───────────────────────────────────────
-  function _bindUI() {
-    // Tabs
-    // Tabs
-    document.querySelectorAll('.auth-tab').forEach(tab => {
-    document.querySelectorAll('.auth-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
-        const target = tab.dataset.tab;
-        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-        tab.classList.add('active');
-        tab.classList.add('active');
-        document.getElementById(`form-${target}`)?.classList.add('active');
+  document.querySelectorAll('.layer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _activeLayer = parseInt(btn.dataset.layer);
+      document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _interactable.forEach(({mesh}) => {
+        mesh.visible = mesh.userData.layer <= _activeLayer;
       });
     });
+  });
+}
 
-    // Email sign in
-    document.getElementById('signin-btn')?.addEventListener('click', _handleSignIn);
-        document.getElementById(`form-${target}`)?.classList.add('active');
-      });
-    });
+function _camUpdate(camera) {
+  const {theta,phi,r} = _sph;
+  camera.position.set(
+    r * Math.sin(phi) * Math.sin(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.cos(theta)
+  );
+  camera.lookAt(0,0,0);
+}
 
-    // Email sign in
-    document.getElementById('signin-password')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') _handleSignIn();
-    });
+function _bindGalaxyEvents(canvas, renderer, camera, raycaster) {
+  // Mouse drag
+  canvas.addEventListener('mousedown', e => {
+    _isDragging = true; _autoRot = false;
+    _prevMouse = {x:e.clientX, y:e.clientY};
+  });
+  window.addEventListener('mouseup', () => { _isDragging = false; _autoRot = true; });
 
-    // Email sign up
-    document.getElementById('signin-btn')?.addEventListener('click', _handleSignIn);
-    document.getElementById('signin-password')?.addEventListener('keydown', e => {
-    document.getElementById('signup-btn')?.addEventListener('click', _handleSignUp);
-      if (e.key === 'Enter') _handleSignIn();
-    });
-
-    // Email sign up
-    document.getElementById('signup-confirm')?.addEventListener('keydown', e => {
-    document.getElementById('signup-btn')?.addEventListener('click', _handleSignUp);
-    document.getElementById('signup-confirm')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') _handleSignUp();
-      if (e.key === 'Enter') _handleSignUp();
-    });
-
-    });
-
-    // OAuth buttons
-    // OAuth buttons
-    document.getElementById('oauth-google')?.addEventListener('click',  () => _oauthSignIn('google'));
-    document.getElementById('oauth-google')?.addEventListener('click',  () => _oauthSignIn('google'));
-    document.getElementById('oauth-github')?.addEventListener('click',  () => _oauthSignIn('github'));
-    document.getElementById('oauth-github')?.addEventListener('click',  () => _oauthSignIn('github'));
-    document.getElementById('oauth-discord')?.addEventListener('click', () => _oauthSignIn('discord'));
-
-    // Close
-    document.getElementById('oauth-discord')?.addEventListener('click', () => _oauthSignIn('discord'));
-
-    // Close
-    document.getElementById('auth-close')?.addEventListener('click', closeModal);
-    document.getElementById('auth-close')?.addEventListener('click', closeModal);
-    document.getElementById('auth-overlay')?.addEventListener('click', e => {
-    document.getElementById('auth-overlay')?.addEventListener('click', e => {
-      if (e.target === document.getElementById('auth-overlay')) closeModal();
-      if (e.target === document.getElementById('auth-overlay')) closeModal();
-    });
-
-    });
-
-    // Sign out
-    // Sign out
-    document.getElementById('signout-btn')?.addEventListener('click', signOut);
-    document.getElementById('signout-btn')?.addEventListener('click', signOut);
-  }
-
-  }
-  // ── OAuth ─────────────────────────────────────────
-  async function _oauthSignIn(provider) {
-
-  // ── OAuth ─────────────────────────────────────────
-    const btn = document.getElementById(`oauth-${provider}`);
-  async function _oauthSignIn(provider) {
-    const btn = document.getElementById(`oauth-${provider}`);
-    if (btn) { btn.disabled = true; btn.textContent = 'CONNECTING...'; }
-    if (btn) { btn.disabled = true; btn.textContent = 'CONNECTING...'; }
-
-
-    const { error } = await _client.auth.signInWithOAuth({
-    const { error } = await _client.auth.signInWithOAuth({
-      provider,
-      provider,
-      options: { redirectTo: REDIRECT_URL },
-      options: { redirectTo: REDIRECT_URL },
-    });
-    });
-
-
-    if (error) {
-    if (error) {
-      console.error(`${provider} OAuth error:`, error.message);
-      console.error(`${provider} OAuth error:`, error.message);
-      if (btn) { btn.disabled = false; btn.textContent = _providerLabel(provider); }
-      if (btn) { btn.disabled = false; btn.textContent = _providerLabel(provider); }
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    _ttMouse.x =  ((e.clientX-rect.left)/rect.width)*2-1;
+    _ttMouse.y = -((e.clientY-rect.top)/rect.height)*2+1;
+    if (_isDragging) {
+      _tSph.theta -= (e.clientX-_prevMouse.x)*.005;
+      _tSph.phi    = Math.max(.15, Math.min(Math.PI-.15, _tSph.phi + (e.clientY-_prevMouse.y)*.005));
+      _prevMouse = {x:e.clientX, y:e.clientY};
     }
-    }
-    // On success, browser redirects — no further action needed
-    // On success, browser redirects — no further action needed
-  }
-
-  }
-
-  function _providerLabel(provider) {
-  function _providerLabel(provider) {
-    const labels = { google: '▲ CONTINUE WITH GOOGLE', github: '⌥ CONTINUE WITH GITHUB', discord: '◈ CONTINUE WITH DISCORD' };
-    const labels = { google: '▲ CONTINUE WITH GOOGLE', github: '⌥ CONTINUE WITH GITHUB', discord: '◈ CONTINUE WITH DISCORD' };
-    return labels[provider] || provider.toUpperCase();
-    return labels[provider] || provider.toUpperCase();
-  }
-  }
-
-
-  // ── Email Sign In ─────────────────────────────────
-  // ── Email Sign In ─────────────────────────────────
-  async function _handleSignIn() {
-  async function _handleSignIn() {
-    const email    = document.getElementById('signin-email').value.trim();
-    const email    = document.getElementById('signin-email').value.trim();
-    const password = document.getElementById('signin-password').value;
-    const password = document.getElementById('signin-password').value;
-    const errEl    = document.getElementById('signin-error');
-    const errEl    = document.getElementById('signin-error');
-    const btn      = document.getElementById('signin-btn');
-    const btn      = document.getElementById('signin-btn');
-
-
-    if (!email || !password) { _showError(errEl, 'Please fill in all fields.'); return; }
-    if (!email || !password) { _showError(errEl, 'Please fill in all fields.'); return; }
-
-
-    _setLoading(btn, true);
-    _setLoading(btn, true);
-    _hideMsg(errEl);
-    _hideMsg(errEl);
-
-
-    const { error } = await _client.auth.signInWithPassword({ email, password });
-    const { error } = await _client.auth.signInWithPassword({ email, password });
-    if (error) { _setLoading(btn, false); _showError(errEl, error.message); }
-    if (error) { _setLoading(btn, false); _showError(errEl, error.message); }
-    else { closeModal(); }
-    else { closeModal(); }
-  }
-  }
-
-
-  // ── Email Sign Up ─────────────────────────────────
-  // ── Email Sign Up ─────────────────────────────────
-  async function _handleSignUp() {
-  async function _handleSignUp() {
-    const email    = document.getElementById('signup-email').value.trim();
-    const email    = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const password = document.getElementById('signup-password').value;
-    const confirm  = document.getElementById('signup-confirm').value;
-    const confirm  = document.getElementById('signup-confirm').value;
-    const errEl    = document.getElementById('signup-error');
-    const errEl    = document.getElementById('signup-error');
-    const sucEl    = document.getElementById('signup-success');
-    const sucEl    = document.getElementById('signup-success');
-    const btn      = document.getElementById('signup-btn');
-    const btn      = document.getElementById('signup-btn');
-
-
-    if (!email || !password || !confirm) { _showError(errEl, 'Please fill in all fields.'); return; }
-    if (!email || !password || !confirm) { _showError(errEl, 'Please fill in all fields.'); return; }
-    if (password !== confirm)            { _showError(errEl, 'Passwords do not match.');    return; }
-    if (password !== confirm)            { _showError(errEl, 'Passwords do not match.');    return; }
-    if (password.length < 6)            { _showError(errEl, 'Minimum 6 characters.');       return; }
-    if (password.length < 6)            { _showError(errEl, 'Minimum 6 characters.');       return; }
-
-
-    _setLoading(btn, true);
-    _setLoading(btn, true);
-    _hideMsg(errEl);
-    _hideMsg(errEl);
-    _hideMsg(sucEl);
-    _hideMsg(sucEl);
-
-
-    const { error } = await _client.auth.signUp({ email, password });
-    const { error } = await _client.auth.signUp({ email, password });
-    _setLoading(btn, false);
-    _setLoading(btn, false);
-    if (error) { _showError(errEl, error.message); }
-    if (error) { _showError(errEl, error.message); }
-    else { sucEl.classList.remove('hidden'); }
-    else { sucEl.classList.remove('hidden'); }
-  }
-
-  }
-
-  // ── Sign Out ──────────────────────────────────────
-  // ── Sign Out ──────────────────────────────────────
-  async function signOut() {
-  async function signOut() {
-    await _client.auth.signOut();
-    await _client.auth.signOut();
-  }
-  }
-
-
-  // ── Helpers ───────────────────────────────────────
-  // ── Helpers ───────────────────────────────────────
-  function openModal()  { document.getElementById('auth-overlay').classList.remove('hidden'); }
-  function openModal()  { document.getElementById('auth-overlay').classList.remove('hidden'); }
-  function closeModal() { document.getElementById('auth-overlay').classList.add('hidden'); }
-  function closeModal() { document.getElementById('auth-overlay').classList.add('hidden'); }
-
-
-  function _showError(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
-  function _showError(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
-  function _hideMsg(el)        { el.classList.add('hidden'); }
-  function _hideMsg(el)        { el.classList.add('hidden'); }
-
-
-  function _setLoading(btn, loading) {
-  function _setLoading(btn, loading) {
-    const text   = btn.querySelector('.btn-text');
-    const text   = btn.querySelector('.btn-text');
-    const loader = btn.querySelector('.btn-loader');
-    const loader = btn.querySelector('.btn-loader');
-    btn.disabled = loading;
-    btn.disabled = loading;
-    text?.classList.toggle('hidden', loading);
-    text?.classList.toggle('hidden', loading);
-    loader?.classList.toggle('hidden', !loading);
-    loader?.classList.toggle('hidden', !loading);
-    loader?.classList.toggle('visible', loading);
-    loader?.classList.toggle('visible', loading);
-  }
-
-  }
-
-  function getUser()   { return _session?.user ?? null; }
-  function getUser()   { return _session?.user ?? null; }
-  function getClient() { return _client; }
-
-  function getClient() { return _client; }
-
-  return { init, openModal, closeModal, signOut, getUser, getClient };
-  return { init, openModal, closeModal, signOut, getUser, getClient };
-})();
-})();
-// ═══════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════
-// js/galaxy.js — Three.js 3D Holographic Galaxy
-// js/galaxy.js — Three.js 3D Holographic Galaxy
-// ═══════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════
-
-const Galaxy = (() => {
-
-const Galaxy = (() => {
-
-  // ── Cluster Data ──────────────────────────────────
-  // ── Cluster Data ──────────────────────────────────
-  const CLUSTERS = [
-  const CLUSTERS = [
-    {
-    {
-      id: 'social',    label: 'Social Media',  color: '#ff6b6b',
-      id: 'social',    label: 'Social Media',  color: '#ff6b6b',
-      hx: -1.8, hy:  0.4, hz:  0.5,
-      hx: -1.8, hy:  0.4, hz:  0.5,
-      sites: [
-      sites: [
-        { name: 'Twitter/X',   url: 'https://x.com',           layer: 1 },
-        { name: 'Twitter/X',   url: 'https://x.com',           layer: 1 },
-        { name: 'Instagram',   url: 'https://instagram.com',    layer: 1 },
-        { name: 'Instagram',   url: 'https://instagram.com',    layer: 1 },
-        { name: 'TikTok',      url: 'https://tiktok.com',       layer: 1 },
-        { name: 'TikTok',      url: 'https://tiktok.com',       layer: 1 },
-        { name: 'Reddit',      url: 'https://reddit.com',       layer: 1 },
-        { name: 'Reddit',      url: 'https://reddit.com',       layer: 1 },
-        { name: 'Facebook',    url: 'https://facebook.com',     layer: 1 },
-        { name: 'Facebook',    url: 'https://facebook.com',     layer: 1 },
-        { name: 'LinkedIn',    url: 'https://linkedin.com',     layer: 1 },
-        { name: 'LinkedIn',    url: 'https://linkedin.com',     layer: 1 },
-        { name: 'Snapchat',    url: 'https://snapchat.com',     layer: 1 },
-        { name: 'Snapchat',    url: 'https://snapchat.com',     layer: 1 },
-        { name: 'Threads',     url: 'https://threads.net',      layer: 1 },
-        { name: 'Threads',     url: 'https://threads.net',      layer: 1 },
-        { name: 'Discord',     url: 'https://discord.com',      layer: 2 },
-        { name: 'Discord',     url: 'https://discord.com',      layer: 2 },
-        { name: 'BeReal',      url: 'https://bere.al',          layer: 2 },
-        { name: 'BeReal',      url: 'https://bere.al',          layer: 2 },
-        { name: 'Tumblr',      url: 'https://tumblr.com',       layer: 2 },
-        { name: 'Tumblr',      url: 'https://tumblr.com',       layer: 2 },
-        { name: 'Mastodon',    url: 'https://mastodon.social',  layer: 2 },
-        { name: 'Mastodon',    url: 'https://mastodon.social',  layer: 2 },
-        { name: 'Cohost',      url: 'https://cohost.org',       layer: 3 },
-        { name: 'Cohost',      url: 'https://cohost.org',       layer: 3 },
-        { name: 'Pillowfort',  url: 'https://pillowfort.social',layer: 3 },
-        { name: 'Pillowfort',  url: 'https://pillowfort.social',layer: 3 },
-      ]
-      ]
-    },
-    },
-    {
-    {
-      id: 'ai',        label: 'AI Tools',       color: '#00f5ff',
-      id: 'ai',        label: 'AI Tools',       color: '#00f5ff',
-      hx:  0.2, hy:  1.2, hz: -0.8,
-      hx:  0.2, hy:  1.2, hz: -0.8,
-      sites: [
-      sites: [
-        { name: 'ChatGPT',     url: 'https://chat.openai.com',  layer: 1 },
-        { name: 'ChatGPT',     url: 'https://chat.openai.com',  layer: 1 },
-        { name: 'Claude',      url: 'https://claude.ai',         layer: 1 },
-        { name: 'Claude',      url: 'https://claude.ai',         layer: 1 },
-        { name: 'Gemini',      url: 'https://gemini.google.com', layer: 1 },
-        { name: 'Gemini',      url: 'https://gemini.google.com', layer: 1 },
-        { name: 'Cyanix AI',   url: '#',                         layer: 1 },
-        { name: 'Cyanix AI',   url: '#',                         layer: 1 },
-        { name: 'Perplexity',  url: 'https://perplexity.ai',    layer: 1 },
-        { name: 'Perplexity',  url: 'https://perplexity.ai',    layer: 1 },
-        { name: 'Midjourney',  url: 'https://midjourney.com',   layer: 1 },
-        { name: 'Midjourney',  url: 'https://midjourney.com',   layer: 1 },
-        { name: 'Runway',      url: 'https://runwayml.com',     layer: 2 },
-        { name: 'Runway',      url: 'https://runwayml.com',     layer: 2 },
-        { name: 'ElevenLabs',  url: 'https://elevenlabs.io',    layer: 2 },
-        { name: 'ElevenLabs',  url: 'https://elevenlabs.io',    layer: 2 },
-        { name: 'Cursor',      url: 'https://cursor.sh',         layer: 2 },
-        { name: 'Cursor',      url: 'https://cursor.sh',         layer: 2 },
-        { name: 'Sora',        url: 'https://sora.com',          layer: 2 },
-        { name: 'Sora',        url: 'https://sora.com',          layer: 2 },
-        { name: 'Pika',        url: 'https://pika.art',          layer: 2 },
-        { name: 'Pika',        url: 'https://pika.art',          layer: 2 },
-      ]
-      ]
-    },
-    },
-    {
-    {
-      id: 'gaming',    label: 'Gaming',          color: '#a855f7',
-      id: 'gaming',    label: 'Gaming',          color: '#a855f7',
-      hx:  2.0, hy: -0.3, hz:  0.2,
-      hx:  2.0, hy: -0.3, hz:  0.2,
-      sites: [
-      sites: [
-        { name: 'Steam',        url: 'https://store.steampowered.com', layer: 1 },
-        { name: 'Steam',        url: 'https://store.steampowered.com', layer: 1 },
-        { name: 'Twitch',       url: 'https://twitch.tv',              layer: 1 },
-        { name: 'Twitch',       url: 'https://twitch.tv',              layer: 1 },
-        { name: 'Epic Games',   url: 'https://epicgames.com',          layer: 1 },
-        { name: 'Epic Games',   url: 'https://epicgames.com',          layer: 1 },
-        { name: 'Roblox',       url: 'https://roblox.com',             layer: 1 },
-        { name: 'Roblox',       url: 'https://roblox.com',             layer: 1 },
-        { name: 'Fortnite',     url: 'https://fortnite.com',           layer: 1 },
-        { name: 'Fortnite',     url: 'https://fortnite.com',           layer: 1 },
-        { name: 'Minecraft',    url: 'https://minecraft.net',          layer: 1 },
-        { name: 'Minecraft',    url: 'https://minecraft.net',          layer: 1 },
-        { name: 'Valorant',     url: 'https://playvalorant.com',       layer: 2 },
-        { name: 'Valorant',     url: 'https://playvalorant.com',       layer: 2 },
-        { name: 'Xbox',         url: 'https://xbox.com',               layer: 2 },
-        { name: 'Xbox',         url: 'https://xbox.com',               layer: 2 },
-        { name: 'PlayStation',  url: 'https://playstation.com',        layer: 2 },
-        { name: 'PlayStation',  url: 'https://playstation.com',        layer: 2 },
-        { name: 'GOG',          url: 'https://gog.com',                layer: 2 },
-        { name: 'GOG',          url: 'https://gog.com',                layer: 2 },
-        { name: 'itch.io',      url: 'https://itch.io',                layer: 3 },
-        { name: 'itch.io',      url: 'https://itch.io',                layer: 3 },
-        { name: 'Newgrounds',   url: 'https://newgrounds.com',         layer: 3 },
-        { name: 'Newgrounds',   url: 'https://newgrounds.com',         layer: 3 },
-      ]
-      ]
-    },
-    },
-    {
-    {
-      id: 'news',      label: 'News & Media',    color: '#f59e0b',
-      id: 'news',      label: 'News & Media',    color: '#f59e0b',
-      hx: -0.5, hy: -1.4, hz:  0.6,
-      hx: -0.5, hy: -1.4, hz:  0.6,
-      sites: [
-      sites: [
-        { name: 'BBC',          url: 'https://bbc.com',         layer: 1 },
-        { name: 'BBC',          url: 'https://bbc.com',         layer: 1 },
-        { name: 'Reuters',      url: 'https://reuters.com',     layer: 1 },
-        { name: 'Reuters',      url: 'https://reuters.com',     layer: 1 },
-        { name: 'The Verge',    url: 'https://theverge.com',    layer: 1 },
-        { name: 'The Verge',    url: 'https://theverge.com',    layer: 1 },
-        { name: 'TechCrunch',   url: 'https://techcrunch.com',  layer: 1 },
-        { name: 'TechCrunch',   url: 'https://techcrunch.com',  layer: 1 },
-        { name: 'Wired',        url: 'https://wired.com',       layer: 1 },
-        { name: 'Wired',        url: 'https://wired.com',       layer: 1 },
-        { name: 'Hacker News',  url: 'https://news.ycombinator.com', layer: 2 },
-        { name: 'Hacker News',  url: 'https://news.ycombinator.com', layer: 2 },
-        { name: 'Bloomberg',    url: 'https://bloomberg.com',   layer: 2 },
-        { name: 'Bloomberg',    url: 'https://bloomberg.com',   layer: 2 },
-        { name: 'Axios',        url: 'https://axios.com',       layer: 2 },
-        { name: 'Axios',        url: 'https://axios.com',       layer: 2 },
-        { name: 'Substack',     url: 'https://substack.com',    layer: 2 },
-        { name: 'Substack',     url: 'https://substack.com',    layer: 2 },
-        { name: 'The Guardian', url: 'https://theguardian.com', layer: 2 },
-        { name: 'The Guardian', url: 'https://theguardian.com', layer: 2 },
-      ]
-      ]
-    },
-    },
-    {
-    {
-      id: 'darkweb',   label: 'Dark Web',        color: '#374151',
-      id: 'darkweb',   label: 'Dark Web',        color: '#374151',
-      hx:  1.2, hy:  1.6, hz:  1.0,
-      hx:  1.2, hy:  1.6, hz:  1.0,
-      sites: [
-      sites: [
-        { name: '[REDACTED]',   url: '#', layer: 4 },
-        { name: '[REDACTED]',   url: '#', layer: 4 },
-        { name: '[CLASSIFIED]', url: '#', layer: 4 },
-        { name: '[CLASSIFIED]', url: '#', layer: 4 },
-        { name: '[UNKNOWN]',    url: '#', layer: 4 },
-        { name: '[UNKNOWN]',    url: '#', layer: 4 },
-        { name: '[ENCRYPTED]',  url: '#', layer: 4 },
-        { name: '[ENCRYPTED]',  url: '#', layer: 4 },
-        { name: '[HIDDEN]',     url: '#', layer: 4 },
-        { name: '[HIDDEN]',     url: '#', layer: 4 },
-      ]
-      ]
-    },
-    },
-    {
-    {
-      id: 'startups',  label: 'Startups',        color: '#10b981',
-      id: 'startups',  label: 'Startups',        color: '#10b981',
-      hx: -1.2, hy:  1.0, hz: -0.5,
-      hx: -1.2, hy:  1.0, hz: -0.5,
-      sites: [
-      sites: [
-        { name: 'Y Combinator', url: 'https://ycombinator.com', layer: 1 },
-        { name: 'Y Combinator', url: 'https://ycombinator.com', layer: 1 },
-        { name: 'Product Hunt', url: 'https://producthunt.com',  layer: 1 },
-        { name: 'Product Hunt', url: 'https://producthunt.com',  layer: 1 },
-        { name: 'Vercel',       url: 'https://vercel.com',       layer: 1 },
-        { name: 'Vercel',       url: 'https://vercel.com',       layer: 1 },
-        { name: 'Supabase',     url: 'https://supabase.com',     layer: 1 },
-        { name: 'Supabase',     url: 'https://supabase.com',     layer: 1 },
-        { name: 'Figma',        url: 'https://figma.com',        layer: 1 },
-        { name: 'Figma',        url: 'https://figma.com',        layer: 1 },
-        { name: 'Notion',       url: 'https://notion.so',        layer: 1 },
-        { name: 'Notion',       url: 'https://notion.so',        layer: 1 },
-        { name: 'Linear',       url: 'https://linear.app',       layer: 2 },
-        { name: 'Linear',       url: 'https://linear.app',       layer: 2 },
-        { name: 'AngelList',    url: 'https://angel.co',         layer: 2 },
-        { name: 'AngelList',    url: 'https://angel.co',         layer: 2 },
-        { name: 'Indie Hackers',url: 'https://indiehackers.com', layer: 2 },
-        { name: 'Indie Hackers',url: 'https://indiehackers.com', layer: 2 },
-        { name: 'Lemon Squeezy',url: 'https://lemonsqueezy.com', layer: 3 },
-        { name: 'Lemon Squeezy',url: 'https://lemonsqueezy.com', layer: 3 },
-      ]
-      ]
-    },
-    },
-    {
-    {
-      id: 'education', label: 'Education',       color: '#3b82f6',
-      id: 'education', label: 'Education',       color: '#3b82f6',
-      hx:  0.8, hy: -1.8, hz: -0.4,
-      hx:  0.8, hy: -1.8, hz: -0.4,
-      sites: [
-      sites: [
-        { name: 'Khan Academy', url: 'https://khanacademy.org',  layer: 1 },
-        { name: 'Khan Academy', url: 'https://khanacademy.org',  layer: 1 },
-        { name: 'Coursera',     url: 'https://coursera.org',     layer: 1 },
-        { name: 'Coursera',     url: 'https://coursera.org',     layer: 1 },
-        { name: 'YouTube',      url: 'https://youtube.com',      layer: 1 },
-        { name: 'YouTube',      url: 'https://youtube.com',      layer: 1 },
-        { name: 'Wikipedia',    url: 'https://wikipedia.org',    layer: 1 },
-        { name: 'Wikipedia',    url: 'https://wikipedia.org',    layer: 1 },
-        { name: 'Duolingo',     url: 'https://duolingo.com',     layer: 1 },
-        { name: 'Duolingo',     url: 'https://duolingo.com',     layer: 1 },
-        { name: 'Udemy',        url: 'https://udemy.com',        layer: 2 },
-        { name: 'Udemy',        url: 'https://udemy.com',        layer: 2 },
-        { name: 'Brilliant',    url: 'https://brilliant.org',    layer: 2 },
-        { name: 'Brilliant',    url: 'https://brilliant.org',    layer: 2 },
-        { name: 'Codecademy',   url: 'https://codecademy.com',  layer: 2 },
-        { name: 'Codecademy',   url: 'https://codecademy.com',  layer: 2 },
-        { name: 'MIT OCW',      url: 'https://ocw.mit.edu',     layer: 2 },
-        { name: 'MIT OCW',      url: 'https://ocw.mit.edu',     layer: 2 },
-        { name: 'Sci-Hub',      url: '#',                        layer: 3 },
-        { name: 'Sci-Hub',      url: '#',                        layer: 3 },
-      ]
-      ]
-    },
-    },
-    {
-    {
-      id: 'ecommerce', label: 'E-Commerce',      color: '#f97316',
-      id: 'ecommerce', label: 'E-Commerce',      color: '#f97316',
-      hx: -2.2, hy: -0.8, hz: -0.2,
-      hx: -2.2, hy: -0.8, hz: -0.2,
-      sites: [
-      sites: [
-        { name: 'Amazon',    url: 'https://amazon.com',   layer: 1 },
-        { name: 'Amazon',    url: 'https://amazon.com',   layer: 1 },
-        { name: 'Shopify',   url: 'https://shopify.com',  layer: 1 },
-        { name: 'Shopify',   url: 'https://shopify.com',  layer: 1 },
-        { name: 'Etsy',      url: 'https://etsy.com',     layer: 1 },
-        { name: 'Etsy',      url: 'https://etsy.com',     layer: 1 },
-        { name: 'eBay',      url: 'https://ebay.com',     layer: 1 },
-        { name: 'eBay',      url: 'https://ebay.com',     layer: 1 },
-        { name: 'Stripe',    url: 'https://stripe.com',   layer: 1 },
-        { name: 'Stripe',    url: 'https://stripe.com',   layer: 1 },
-        { name: 'Gumroad',   url: 'https://gumroad.com',  layer: 2 },
-        { name: 'Gumroad',   url: 'https://gumroad.com',  layer: 2 },
-        { name: 'Depop',     url: 'https://depop.com',    layer: 2 },
-        { name: 'Depop',     url: 'https://depop.com',    layer: 2 },
-        { name: 'StockX',    url: 'https://stockx.com',   layer: 2 },
-        { name: 'StockX',    url: 'https://stockx.com',   layer: 2 },
-        { name: 'Mercari',   url: 'https://mercari.com',  layer: 2 },
-        { name: 'Mercari',   url: 'https://mercari.com',  layer: 2 },
-      ]
-      ]
-    },
-    },
-  ];
-  ];
-
-
-  // ── State ─────────────────────────────────────────
-  // ── State ─────────────────────────────────────────
-  let scene, camera, renderer, animId;
-  let scene, camera, renderer, animId;
-  let starField, clusterGroups = [];
-  let starField, clusterGroups = [];
-  let raycaster, mouse;
-  let raycaster, mouse;
-  let hoveredPoint = null;
-  let hoveredPoint = null;
-  let activeLayer  = 1;
-  let activeLayer  = 1;
-
-
-  // All interactive points as flat array
-  // All interactive points as flat array
-  let interactivePoints = []; // { mesh, cluster, site, worldPos }
-  let interactivePoints = []; // { mesh, cluster, site, worldPos }
-
-
-  // Mouse drag orbit
-  // Mouse drag orbit
-  let isDragging = false, prevMouse = { x: 0, y: 0 };
-  let isDragging = false, prevMouse = { x: 0, y: 0 };
-  let spherical  = { theta: 0.3, phi: Math.PI / 2.5, radius: 5 };
-  let spherical  = { theta: 0.3, phi: Math.PI / 2.5, radius: 5 };
-  let targetSpherical = { ...spherical };
-  let targetSpherical = { ...spherical };
-  let autoRotate = true;
-
-  let autoRotate = true;
-
-  // Touch
-  // Touch
-  let lastTouchDist = null;
-
-  let lastTouchDist = null;
-
-  // ── Public Init ───────────────────────────────────
-  // ── Public Init ───────────────────────────────────
-  function init() {
-  function init() {
-    const canvas = document.getElementById('galaxy-canvas');
-    const canvas = document.getElementById('galaxy-canvas');
-    // Use window dimensions — canvas.clientWidth can return 0 before layout
-    // Use window dimensions — canvas.clientWidth can return 0 before layout
-    const W = window.innerWidth;
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-
-    const H = window.innerHeight;
-
-    // Scene
-    // Scene
-    scene = new THREE.Scene();
-    scene = new THREE.Scene();
-
-
-    // Camera
-    // Camera
-    camera = new THREE.PerspectiveCamera(60, W / H, 0.01, 200);
-    camera = new THREE.PerspectiveCamera(60, W / H, 0.01, 200);
-    _updateCamera();
-    _updateCamera();
-
-
-    // Renderer — wrapped in try/catch in case WebGL is unavailable
-    // Renderer — wrapped in try/catch in case WebGL is unavailable
-    try {
-    try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    } catch(e) {
-    } catch(e) {
-      console.error('WebGL init failed:', e);
-      console.error('WebGL init failed:', e);
-      return;
-      return;
-    }
-    }
-    renderer.setSize(W, H, false);
-    renderer.setSize(W, H, false);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000008, 1);
-    renderer.setClearColor(0x000008, 1);
-
-
-    // Raycaster
-    // Raycaster
-    raycaster = new THREE.Raycaster();
-    raycaster = new THREE.Raycaster();
-    raycaster.params.Points.threshold = 0.05;
-    raycaster.params.Points.threshold = 0.05;
-    mouse = new THREE.Vector2();
-    mouse = new THREE.Vector2();
-
-
-    _buildBackground();
-    _buildBackground();
-    _buildClusters();
-    _buildClusters();
-    _buildLegend();
-    _buildLegend();
-    _bindEvents(canvas);
-    _bindEvents(canvas);
-    _loop();
-    _loop();
-  }
-  }
-
-
-  // ── Glow Texture ─────────────────────────────────
-  // ── Glow Texture ─────────────────────────────────
-  function _makeGlowTexture(color = '#ffffff', size = 64) {
-  function _makeGlowTexture(color = '#ffffff', size = 64) {
-    const c = document.createElement('canvas');
-    const c = document.createElement('canvas');
-    c.width = c.height = size;
-    c.width = c.height = size;
-    const ctx = c.getContext('2d');
-    const ctx = c.getContext('2d');
-    const g   = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-    const g   = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-    g.addColorStop(0,   color);
-    g.addColorStop(0,   color);
-    g.addColorStop(0.2, color + 'cc');
-    g.addColorStop(0.2, color + 'cc');
-    g.addColorStop(0.5, color + '44');
-    g.addColorStop(0.5, color + '44');
-    g.addColorStop(1,   'transparent');
-    g.addColorStop(1,   'transparent');
-    ctx.fillStyle = g;
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillRect(0, 0, size, size);
-    return new THREE.CanvasTexture(c);
-    return new THREE.CanvasTexture(c);
-  }
-
-  }
-
-  // ── Background Stars ─────────────────────────────
-  // ── Background Stars ─────────────────────────────
-  function _buildBackground() {
-  function _buildBackground() {
-    const COUNT = 6000;
-    const COUNT = 6000;
-    const positions = new Float32Array(COUNT * 3);
-    const positions = new Float32Array(COUNT * 3);
-    const colors    = new Float32Array(COUNT * 3);
-    const colors    = new Float32Array(COUNT * 3);
-    const sizes     = new Float32Array(COUNT);
-    const sizes     = new Float32Array(COUNT);
-
-
-    for (let i = 0; i < COUNT; i++) {
-    for (let i = 0; i < COUNT; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const theta = Math.random() * Math.PI * 2;
-      const phi   = Math.acos(2 * Math.random() - 1);
-      const phi   = Math.acos(2 * Math.random() - 1);
-      const r     = 20 + Math.random() * 60;
-      const r     = 20 + Math.random() * 60;
-      positions[i*3]   = r * Math.sin(phi) * Math.cos(theta);
-      positions[i*3]   = r * Math.sin(phi) * Math.cos(theta);
-      positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i*3+2] = r * Math.cos(phi);
-      positions[i*3+2] = r * Math.cos(phi);
-
-
-      const bright = 0.4 + Math.random() * 0.6;
-      const bright = 0.4 + Math.random() * 0.6;
-      const hue    = Math.random() > 0.7 ? new THREE.Color(0.55, 0.8, 1) : new THREE.Color(bright, bright, bright);
-      const hue    = Math.random() > 0.7 ? new THREE.Color(0.55, 0.8, 1) : new THREE.Color(bright, bright, bright);
-      colors[i*3]   = hue.r;
-      colors[i*3]   = hue.r;
-      colors[i*3+1] = hue.g;
-      colors[i*3+1] = hue.g;
-      colors[i*3+2] = hue.b;
-      colors[i*3+2] = hue.b;
-      sizes[i] = 0.5 + Math.random() * 1.5;
-      sizes[i] = 0.5 + Math.random() * 1.5;
-    }
-
-    }
-
-    const geo = new THREE.BufferGeometry();
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
-    geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
-    geo.setAttribute('size',     new THREE.BufferAttribute(sizes, 1));
-    geo.setAttribute('size',     new THREE.BufferAttribute(sizes, 1));
-
-
-    const mat = new THREE.PointsMaterial({
-    const mat = new THREE.PointsMaterial({
-      size:           0.08,
-      size:           0.08,
-      vertexColors:   true,
-      vertexColors:   true,
-      transparent:    true,
-      transparent:    true,
-      opacity:        0.8,
-      opacity:        0.8,
-      map:            _makeGlowTexture('#ffffff', 32),
-      map:            _makeGlowTexture('#ffffff', 32),
-      blending:       THREE.AdditiveBlending,
-      blending:       THREE.AdditiveBlending,
-      depthWrite:     false,
-      depthWrite:     false,
-      sizeAttenuation:true,
-      sizeAttenuation:true,
-    });
-    });
-
-
-    starField = new THREE.Points(geo, mat);
-    starField = new THREE.Points(geo, mat);
-    scene.add(starField);
-    scene.add(starField);
-  }
-  }
-
-
-  // ── Cluster Groups ────────────────────────────────
-  // ── Cluster Groups ────────────────────────────────
-  function _buildClusters() {
-  function _buildClusters() {
-    CLUSTERS.forEach(cluster => {
-    CLUSTERS.forEach(cluster => {
-      const group = new THREE.Group();
-      const group = new THREE.Group();
-      group.userData.clusterId = cluster.id;
-      group.userData.clusterId = cluster.id;
-
-
-      const clr = new THREE.Color(cluster.color);
-      const clr = new THREE.Color(cluster.color);
-
-
-      // Core star
-      // Core star
-      const coreTex = _makeGlowTexture(cluster.color, 128);
-      const coreTex = _makeGlowTexture(cluster.color, 128);
-      const coreMat = new THREE.PointsMaterial({
-      const coreMat = new THREE.PointsMaterial({
-        size:            0.25,
-        size:            0.25,
-        map:             coreTex,
-        map:             coreTex,
-        transparent:     true,
-        transparent:     true,
-        opacity:         1,
-        opacity:         1,
-        blending:        THREE.AdditiveBlending,
-        blending:        THREE.AdditiveBlending,
-        depthWrite:      false,
-        depthWrite:      false,
-        sizeAttenuation: true,
-        sizeAttenuation: true,
-      });
-      });
-      const coreGeo  = new THREE.BufferGeometry();
-      const coreGeo  = new THREE.BufferGeometry();
-      const corePos  = new Float32Array([0, 0, 0]);
-      const corePos  = new Float32Array([0, 0, 0]);
-      coreGeo.setAttribute('position', new THREE.BufferAttribute(corePos, 3));
-      coreGeo.setAttribute('position', new THREE.BufferAttribute(corePos, 3));
-      const corePoint = new THREE.Points(coreGeo, coreMat);
-      const corePoint = new THREE.Points(coreGeo, coreMat);
-      group.add(corePoint);
-      group.add(corePoint);
-
-
-      // Nebula glow (large transparent sphere)
-      // Nebula glow (large transparent sphere)
-      const nebulaGeo = new THREE.SphereGeometry(0.55, 16, 16);
-      const nebulaGeo = new THREE.SphereGeometry(0.55, 16, 16);
-      const nebulaMat = new THREE.MeshBasicMaterial({
-      const nebulaMat = new THREE.MeshBasicMaterial({
-        color: clr,
-        color: clr,
-        transparent: true,
-        transparent: true,
-        opacity: 0.04,
-        opacity: 0.04,
-        blending: THREE.AdditiveBlending,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        depthWrite: false,
-        side: THREE.BackSide,
-        side: THREE.BackSide,
-      });
-      });
-      group.add(new THREE.Mesh(nebulaGeo, nebulaMat));
-      group.add(new THREE.Mesh(nebulaGeo, nebulaMat));
-
-
-      // Satellite sites
-      // Satellite sites
-      cluster.sites.forEach(site => {
-      cluster.sites.forEach(site => {
-        const angle  = Math.random() * Math.PI * 2;
-        const angle  = Math.random() * Math.PI * 2;
-        const incl   = (Math.random() - 0.5) * Math.PI * 0.6;
-        const incl   = (Math.random() - 0.5) * Math.PI * 0.6;
-        const dist   = 0.2 + Math.random() * 0.5;
-        const dist   = 0.2 + Math.random() * 0.5;
-        const x = dist * Math.cos(angle) * Math.cos(incl);
-        const x = dist * Math.cos(angle) * Math.cos(incl);
-        const y = dist * Math.sin(incl);
-        const y = dist * Math.sin(incl);
-        const z = dist * Math.sin(angle) * Math.cos(incl);
-        const z = dist * Math.sin(angle) * Math.cos(incl);
-
-
-        const siteTex = _makeGlowTexture(cluster.color, 64);
-        const siteTex = _makeGlowTexture(cluster.color, 64);
-        const siteMat = new THREE.PointsMaterial({
-        const siteMat = new THREE.PointsMaterial({
-          size:            site.layer === 1 ? 0.1 : site.layer === 2 ? 0.07 : 0.05,
-          size:            site.layer === 1 ? 0.1 : site.layer === 2 ? 0.07 : 0.05,
-          map:             siteTex,
-          map:             siteTex,
-          transparent:     true,
-          transparent:     true,
-          opacity:         site.layer === 1 ? 0.9 : site.layer === 2 ? 0.6 : 0.35,
-          opacity:         site.layer === 1 ? 0.9 : site.layer === 2 ? 0.6 : 0.35,
-          blending:        THREE.AdditiveBlending,
-          blending:        THREE.AdditiveBlending,
-          depthWrite:      false,
-          depthWrite:      false,
-          sizeAttenuation: true,
-        });
-          sizeAttenuation: true,
-        });
-        const siteGeo = new THREE.BufferGeometry();
-        const siteGeo = new THREE.BufferGeometry();
-        siteGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([x, y, z]), 3));
-        siteGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([x, y, z]), 3));
-        const sitePoint = new THREE.Points(siteGeo, siteMat);
-        const sitePoint = new THREE.Points(siteGeo, siteMat);
-        sitePoint.userData = { cluster, site };
-        sitePoint.userData = { cluster, site };
-        group.add(sitePoint);
-        group.add(sitePoint);
-
-
-        interactivePoints.push({
-        interactivePoints.push({
-          mesh:     sitePoint,
-          mesh:     sitePoint,
-          cluster:  cluster,
-          cluster:  cluster,
-          site:     site,
-          site:     site,
-          worldPos: new THREE.Vector3(x, y, z),
-          worldPos: new THREE.Vector3(x, y, z),
-        });
-        });
-      });
-
-      });
-
-      group.position.set(cluster.hx, cluster.hy, cluster.hz);
-      group.position.set(cluster.hx, cluster.hy, cluster.hz);
-      clusterGroups.push(group);
-      clusterGroups.push(group);
-      scene.add(group);
-      scene.add(group);
-    });
-    });
-  }
-  }
-
-
-  // ── Legend ────────────────────────────────────────
-  // ── Legend ────────────────────────────────────────
-  function _buildLegend() {
-  function _buildLegend() {
-    const container = document.getElementById('legend-items');
-    const container = document.getElementById('legend-items');
-    container.innerHTML = '';
-    container.innerHTML = '';
-    CLUSTERS.forEach(c => {
-    CLUSTERS.forEach(c => {
-      const item = document.createElement('div');
-      const item = document.createElement('div');
-      item.className = 'legend-item';
-      item.className = 'legend-item';
-      item.innerHTML = `<span class="legend-dot" style="background:${c.color};box-shadow:0 0 6px ${c.color}"></span>${c.label.toUpperCase()}`;
-      item.innerHTML = `<span class="legend-dot" style="background:${c.color};box-shadow:0 0 6px ${c.color}"></span>${c.label.toUpperCase()}`;
-      item.addEventListener('click', () => {
-      item.addEventListener('click', () => {
-        const g = clusterGroups.find(g => g.userData.clusterId === c.id);
-        const g = clusterGroups.find(g => g.userData.clusterId === c.id);
-        if (g) _flyTo(g.position);
-        if (g) _flyTo(g.position);
-      });
-      });
-      container.appendChild(item);
-      container.appendChild(item);
-    });
-    });
-
-
-    // Layer toggles
-    // Layer toggles
-    document.querySelectorAll('.layer-item').forEach(el => {
-    document.querySelectorAll('.layer-item').forEach(el => {
-      el.addEventListener('click', () => {
-      el.addEventListener('click', () => {
-        const layer = parseInt(el.dataset.layer);
-        const layer = parseInt(el.dataset.layer);
-        activeLayer = layer;
-        activeLayer = layer;
-        document.querySelectorAll('.layer-item').forEach(li => li.classList.remove('active'));
-        document.querySelectorAll('.layer-item').forEach(li => li.classList.remove('active'));
-        el.classList.add('active');
-        el.classList.add('active');
-        _applyLayer();
-        _applyLayer();
-      });
-      });
-    });
-    });
-  }
-  }
-
-
-  function _applyLayer() {
-  function _applyLayer() {
-    interactivePoints.forEach(({ mesh, site }) => {
-    interactivePoints.forEach(({ mesh, site }) => {
-      mesh.visible = site.layer <= activeLayer;
-      mesh.visible = site.layer <= activeLayer;
-    });
-    });
-  }
-
-  }
-
-  // ── Camera fly-to ─────────────────────────────────
-  // ── Camera fly-to ─────────────────────────────────
-  function _flyTo(pos) {
-  function _flyTo(pos) {
-    autoRotate = false;
-    autoRotate = false;
-    const dir = pos.clone().normalize();
-    const dir = pos.clone().normalize();
-    targetSpherical.theta = Math.atan2(dir.x, dir.z);
-    targetSpherical.theta = Math.atan2(dir.x, dir.z);
-    targetSpherical.phi   = Math.acos(Math.max(-1, Math.min(1, dir.y)));
-    targetSpherical.phi   = Math.acos(Math.max(-1, Math.min(1, dir.y)));
-    targetSpherical.radius = 2.5;
-    targetSpherical.radius = 2.5;
-    setTimeout(() => { autoRotate = true; }, 3000);
-    setTimeout(() => { autoRotate = true; }, 3000);
-  }
-  }
-
-
-  // ── Camera Update ─────────────────────────────────
-  // ── Camera Update ─────────────────────────────────
-  function _updateCamera() {
-  function _updateCamera() {
-    const { theta, phi, radius } = spherical;
-    const { theta, phi, radius } = spherical;
-    camera.position.set(
-    camera.position.set(
-      radius * Math.sin(phi) * Math.sin(theta),
-      radius * Math.sin(phi) * Math.sin(theta),
-      radius * Math.cos(phi),
-      radius * Math.cos(phi),
-      radius * Math.sin(phi) * Math.cos(theta)
-      radius * Math.sin(phi) * Math.cos(theta)
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    _tSph.r = Math.max(1.5, Math.min(12, _tSph.r + e.deltaY*.005));
+  }, {passive:false});
+
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const v = new THREE.Vector2(
+      ((e.clientX-rect.left)/rect.width)*2-1,
+      -((e.clientY-rect.top)/rect.height)*2+1
     );
-    );
-    camera.lookAt(0, 0, 0);
-    camera.lookAt(0, 0, 0);
-  }
-
-  }
-
-  // ── Events ────────────────────────────────────────
-  // ── Events ────────────────────────────────────────
-  function _bindEvents(canvas) {
-  function _bindEvents(canvas) {
-    // Mouse
-    // Mouse
-    canvas.addEventListener('mousedown', e => {
-    canvas.addEventListener('mousedown', e => {
-      isDragging  = true;
-      isDragging  = true;
-      autoRotate  = false;
-      autoRotate  = false;
-      prevMouse   = { x: e.clientX, y: e.clientY };
-      prevMouse   = { x: e.clientX, y: e.clientY };
-    });
-
-    });
-
-    window.addEventListener('mouseup', () => {
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-      isDragging = false;
-      autoRotate = true;
-      autoRotate = true;
-    });
-
-    });
-
-    canvas.addEventListener('mousemove', e => {
-    canvas.addEventListener('mousemove', e => {
-      // Update mouse for raycasting
-      // Update mouse for raycasting
-      const rect = canvas.getBoundingClientRect();
-      const rect = canvas.getBoundingClientRect();
-      mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-      mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-      mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
-      mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
-
-
-      // Orbit drag
-      // Orbit drag
-      if (isDragging) {
-      if (isDragging) {
-        const dx = e.clientX - prevMouse.x;
-        const dx = e.clientX - prevMouse.x;
-        const dy = e.clientY - prevMouse.y;
-        const dy = e.clientY - prevMouse.y;
-        targetSpherical.theta -= dx * 0.005;
-        targetSpherical.theta -= dx * 0.005;
-        targetSpherical.phi    = Math.max(0.2, Math.min(Math.PI - 0.2, targetSpherical.phi + dy * 0.005));
-        targetSpherical.phi    = Math.max(0.2, Math.min(Math.PI - 0.2, targetSpherical.phi + dy * 0.005));
-        prevMouse = { x: e.clientX, y: e.clientY };
-      }
-    });
-        prevMouse = { x: e.clientX, y: e.clientY };
-
-      }
-    });
-
-    canvas.addEventListener('wheel', e => {
-    canvas.addEventListener('wheel', e => {
-      e.preventDefault();
-      e.preventDefault();
-      targetSpherical.radius = Math.max(1.5, Math.min(12, targetSpherical.radius + e.deltaY * 0.005));
-      targetSpherical.radius = Math.max(1.5, Math.min(12, targetSpherical.radius + e.deltaY * 0.005));
-    }, { passive: false });
-    }, { passive: false });
-
-
-    canvas.addEventListener('click', _handleClick);
-    canvas.addEventListener('click', _handleClick);
-
-
-    // Touch
-    // Touch
-    canvas.addEventListener('touchstart', e => {
-    canvas.addEventListener('touchstart', e => {
-      if (e.touches.length === 1) {
-      if (e.touches.length === 1) {
-        isDragging = true;
-        isDragging = true;
-        autoRotate = false;
-        autoRotate = false;
-        prevMouse  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        prevMouse  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
-      }
-    }, { passive: true });
-
-    }, { passive: true });
-
-    canvas.addEventListener('touchmove', e => {
-    canvas.addEventListener('touchmove', e => {
-      if (e.touches.length === 1 && isDragging) {
-      if (e.touches.length === 1 && isDragging) {
-        const dx = e.touches[0].clientX - prevMouse.x;
-        const dx = e.touches[0].clientX - prevMouse.x;
-        const dy = e.touches[0].clientY - prevMouse.y;
-        const dy = e.touches[0].clientY - prevMouse.y;
-        targetSpherical.theta -= dx * 0.006;
-        targetSpherical.theta -= dx * 0.006;
-        targetSpherical.phi    = Math.max(0.2, Math.min(Math.PI - 0.2, targetSpherical.phi + dy * 0.006));
-        targetSpherical.phi    = Math.max(0.2, Math.min(Math.PI - 0.2, targetSpherical.phi + dy * 0.006));
-        prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
-        prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
-      if (e.touches.length === 2) {
-      if (e.touches.length === 2) {
-        const dx   = e.touches[0].clientX - e.touches[1].clientX;
-        const dx   = e.touches[0].clientX - e.touches[1].clientX;
-        const dy   = e.touches[0].clientY - e.touches[1].clientY;
-        const dy   = e.touches[0].clientY - e.touches[1].clientY;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (lastTouchDist !== null) {
-        if (lastTouchDist !== null) {
-          targetSpherical.radius = Math.max(1.5, Math.min(12, targetSpherical.radius - (dist - lastTouchDist) * 0.01));
-          targetSpherical.radius = Math.max(1.5, Math.min(12, targetSpherical.radius - (dist - lastTouchDist) * 0.01));
-        }
-        }
-        lastTouchDist = dist;
-        lastTouchDist = dist;
-      }
-      }
-    }, { passive: true });
-
-    }, { passive: true });
-
-    canvas.addEventListener('touchend', () => {
-    canvas.addEventListener('touchend', () => {
-      isDragging    = false;
-      isDragging    = false;
-      lastTouchDist = null;
-      lastTouchDist = null;
-      setTimeout(() => { autoRotate = true; }, 2000);
-      setTimeout(() => { autoRotate = true; }, 2000);
-    });
-
-    });
-
-    window.addEventListener('resize', _onResize);
-    window.addEventListener('resize', _onResize);
-  }
-
-  }
-
-  function _handleClick(e) {
-  function _handleClick(e) {
-    const rect     = renderer.domElement.getBoundingClientRect();
-    const rect     = renderer.domElement.getBoundingClientRect();
-    const clickMx  = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-    const clickMx  = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-    const clickMy  = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const clickMy  = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const clickVec = new THREE.Vector2(clickMx, clickMy);
-    const clickVec = new THREE.Vector2(clickMx, clickMy);
-
-
-    raycaster.setFromCamera(clickVec, camera);
-    raycaster.setFromCamera(clickVec, camera);
-
-
-    for (const { mesh, site } of interactivePoints) {
-    for (const { mesh, site } of interactivePoints) {
+    raycaster.setFromCamera(v, camera);
+    for (const {mesh,site} of _interactable) {
       if (!mesh.visible) continue;
-      if (!mesh.visible) continue;
-      const hits = raycaster.intersectObject(mesh);
-      const hits = raycaster.intersectObject(mesh);
-      if (hits.length > 0) {
-      if (hits.length > 0) {
-        if (site.url && site.url !== '#') {
-        if (site.url && site.url !== '#') {
-          window.open(site.url, '_blank', 'noopener,noreferrer');
-          window.open(site.url, '_blank', 'noopener,noreferrer');
-        }
-        }
-        return;
+      if (raycaster.intersectObject(mesh).length>0) {
+        if (site.u && site.u!=='#') window.open(site.u,'_blank','noopener');
         return;
       }
+    }
+  });
+
+  // Touch
+  let lastTD = null;
+  canvas.addEventListener('touchstart', e => {
+    if (e.touches.length===1) { _isDragging=true; _autoRot=false; _prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY}; }
+  }, {passive:true});
+  canvas.addEventListener('touchmove', e => {
+    if (e.touches.length===1 && _isDragging) {
+      _tSph.theta -= (e.touches[0].clientX-_prevMouse.x)*.006;
+      _tSph.phi    = Math.max(.15,Math.min(Math.PI-.15,_tSph.phi+(e.touches[0].clientY-_prevMouse.y)*.006));
+      _prevMouse = {x:e.touches[0].clientX,y:e.touches[0].clientY};
+    }
+    if (e.touches.length===2) {
+      const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      if (lastTD) _tSph.r = Math.max(1.5,Math.min(12,_tSph.r-(d-lastTD)*.01));
+      lastTD = d;
+    }
+  }, {passive:true});
+  canvas.addEventListener('touchend', ()=>{ _isDragging=false; lastTD=null; setTimeout(()=>{_autoRot=true;},2000); });
+
+  window.addEventListener('resize', () => {
+    const W=window.innerWidth, H=window.innerHeight;
+    camera.aspect = W/H; camera.updateProjectionMatrix();
+    renderer.setSize(W,H);
+  });
+}
+
+let _hovered = null;
+function _galaxyLoop(renderer, scene, camera, raycaster) {
+  let t0 = 0;
+  function loop(ts) {
+    requestAnimationFrame(loop);
+    const t = ts*.001;
+
+    if (_autoRot) _tSph.theta += .001;
+    _sph.theta += (_tSph.theta-_sph.theta)*.06;
+    _sph.phi   += (_tSph.phi-_sph.phi)*.06;
+    _sph.r     += (_tSph.r-_sph.r)*.06;
+    _camUpdate(camera);
+
+    scene.children.forEach(c => {
+      if (c.userData.clusterId) {
+        const i = CLUSTERS.findIndex(cl=>cl.id===c.userData.clusterId);
+        c.rotation.y = t*.04*(i%2===0?1:-1);
+        c.rotation.x = Math.sin(t*.02+i)*.05;
       }
-    }
-    }
-  }
-
-  }
-
-  function _onResize() {
-  function _onResize() {
-    const W = window.innerWidth;
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const H = window.innerHeight;
-    camera.aspect = W / H;
-    camera.aspect = W / H;
-    camera.updateProjectionMatrix();
-    camera.updateProjectionMatrix();
-    renderer.setSize(W, H, false);
-  }
-    renderer.setSize(W, H, false);
-
-  }
-
-  // ── Tooltip ───────────────────────────────────────
-  // ── Tooltip ───────────────────────────────────────
-  function _updateTooltip(hovered) {
-  function _updateTooltip(hovered) {
-    const tt = document.getElementById('galaxy-tooltip');
-    const tt = document.getElementById('galaxy-tooltip');
-    if (!hovered) {
-    if (!hovered) {
-      tt.classList.remove('visible');
-      tt.classList.remove('visible');
-      return;
-      return;
-    }
-    }
-    const { cluster, site, screenPos } = hovered;
-    const { cluster, site, screenPos } = hovered;
-    tt.querySelector('.tt-name').textContent    = site.name;
-    tt.querySelector('.tt-name').textContent    = site.name;
-    tt.querySelector('.tt-cluster').textContent = cluster.label.toUpperCase();
-    tt.querySelector('.tt-cluster').textContent = cluster.label.toUpperCase();
-    tt.querySelector('.tt-cluster').style.color = cluster.color;
-    tt.querySelector('.tt-cluster').style.color = cluster.color;
-    tt.querySelector('.tt-url').textContent     = site.url === '#' ? '[CLASSIFIED]' : site.url.replace('https://','');
-    tt.querySelector('.tt-url').textContent     = site.url === '#' ? '[CLASSIFIED]' : site.url.replace('https://','');
-
-
-    // Position tooltip near the point
-    // Position tooltip near the point
-    const canvas = renderer.domElement;
-    const canvas = renderer.domElement;
-    const rect   = canvas.getBoundingClientRect();
-    const rect   = canvas.getBoundingClientRect();
-    const px = (screenPos.x + 1) / 2 * rect.width  + rect.left;
-    const px = (screenPos.x + 1) / 2 * rect.width  + rect.left;
-    const py = (1 - (screenPos.y + 1) / 2) * rect.height + rect.top;
-    const py = (1 - (screenPos.y + 1) / 2) * rect.height + rect.top;
-    tt.style.left = Math.min(px + 14, window.innerWidth - 200) + 'px';
-    tt.style.left = Math.min(px + 14, window.innerWidth - 200) + 'px';
-    tt.style.top  = Math.max(py - 60, 10) + 'px';
-    tt.style.top  = Math.max(py - 60, 10) + 'px';
-    tt.classList.add('visible');
-    tt.classList.add('visible');
-  }
-
-  }
-
-  // ── Render Loop ───────────────────────────────────
-  // ── Render Loop ───────────────────────────────────
-  function _loop() {
-  function _loop() {
-    animId = requestAnimationFrame(_loop);
-    animId = requestAnimationFrame(_loop);
-    const t = performance.now() * 0.001;
-    const t = performance.now() * 0.001;
-
-
-    // Auto-rotate
-    // Auto-rotate
-    if (autoRotate) {
-    if (autoRotate) {
-      targetSpherical.theta += 0.001;
-    }
-      targetSpherical.theta += 0.001;
-
-    }
-
-    // Smooth spherical interpolation
-    // Smooth spherical interpolation
-    spherical.theta  += (targetSpherical.theta  - spherical.theta)  * 0.06;
-    spherical.theta  += (targetSpherical.theta  - spherical.theta)  * 0.06;
-    spherical.phi    += (targetSpherical.phi    - spherical.phi)    * 0.06;
-    spherical.phi    += (targetSpherical.phi    - spherical.phi)    * 0.06;
-    spherical.radius += (targetSpherical.radius - spherical.radius) * 0.06;
-    spherical.radius += (targetSpherical.radius - spherical.radius) * 0.06;
-    _updateCamera();
-
-    _updateCamera();
-
-    // Gently rotate cluster groups on their own axes
-    // Gently rotate cluster groups on their own axes
-    clusterGroups.forEach((g, i) => {
-    clusterGroups.forEach((g, i) => {
-      g.rotation.y = t * 0.04 * (i % 2 === 0 ? 1 : -1);
-      g.rotation.y = t * 0.04 * (i % 2 === 0 ? 1 : -1);
-      g.rotation.x = Math.sin(t * 0.02 + i) * 0.05;
-      g.rotation.x = Math.sin(t * 0.02 + i) * 0.05;
+      if (c.userData.isBg) c.rotation.y = t*.007;
     });
 
-    });
-
-    // Slowly rotate background stars
-    // Slowly rotate background stars
-    if (starField) starField.rotation.y = t * 0.008;
-    if (starField) starField.rotation.y = t * 0.008;
-
-
-    // Raycasting for hover
-    // Raycasting for hover
-    raycaster.setFromCamera(mouse, camera);
-    raycaster.setFromCamera(mouse, camera);
+    // Hover detection
+    raycaster.setFromCamera(_ttMouse, camera);
     let found = null;
-    let found = null;
-    for (const p of interactivePoints) {
-    for (const p of interactivePoints) {
+    for (const p of _interactable) {
       if (!p.mesh.visible) continue;
-      if (!p.mesh.visible) continue;
-      const hits = raycaster.intersectObject(p.mesh);
-      const hits = raycaster.intersectObject(p.mesh);
-      if (hits.length > 0) {
-      if (hits.length > 0) {
-        // Project world pos to screen
-        // Project world pos to screen
-        const wpos = p.mesh.getWorldPosition(new THREE.Vector3());
-        const wpos = p.mesh.getWorldPosition(new THREE.Vector3());
-        wpos.project(camera);
-        wpos.project(camera);
-        found = { ...p, screenPos: { x: wpos.x, y: wpos.y } };
-        found = { ...p, screenPos: { x: wpos.x, y: wpos.y } };
-        document.getElementById('galaxy-canvas').style.cursor = 'pointer';
-        document.getElementById('galaxy-canvas').style.cursor = 'pointer';
-        break;
-        break;
-      }
-      }
+      if (raycaster.intersectObject(p.mesh).length>0) { found=p; break; }
     }
+    if (found !== _hovered) {
+      _hovered = found;
+      _updateTooltip(found, camera, renderer.domElement);
     }
-    if (!found) document.getElementById('galaxy-canvas').style.cursor = isDragging ? 'grabbing' : 'grab';
-    if (!found) document.getElementById('galaxy-canvas').style.cursor = isDragging ? 'grabbing' : 'grab';
-    if (found !== hoveredPoint) {
-    if (found !== hoveredPoint) {
-      hoveredPoint = found;
-      hoveredPoint = found;
-      _updateTooltip(found);
-      _updateTooltip(found);
-    }
-
-    }
+    document.getElementById('galaxy-canvas').style.cursor = found?'pointer':(_isDragging?'grabbing':'grab');
 
     renderer.render(scene, camera);
-    renderer.render(scene, camera);
   }
+  requestAnimationFrame(loop);
+}
 
-  }
+function _updateTooltip(found, camera, canvas) {
+  const tt = document.getElementById('tooltip');
+  if (!found) { tt.classList.add('hidden'); return; }
+  const {cluster:cl, site} = found;
+  document.getElementById('tt-name').textContent    = site.n;
+  document.getElementById('tt-cluster').textContent = cl.label.toUpperCase();
+  document.getElementById('tt-cluster').style.color = cl.color;
+  document.getElementById('tt-url').textContent     = site.u==='#'?'[CLASSIFIED]':site.u.replace('https://','');
 
-  // ── Destroy ───────────────────────────────────────
-  // ── Destroy ───────────────────────────────────────
-  function destroy() {
-  function destroy() {
-    cancelAnimationFrame(animId);
-    cancelAnimationFrame(animId);
-    renderer.dispose();
-    renderer.dispose();
-    window.removeEventListener('resize', _onResize);
-  }
-    window.removeEventListener('resize', _onResize);
+  const wpos = found.mesh.getWorldPosition(new THREE.Vector3());
+  wpos.project(camera);
+  const rect = canvas.getBoundingClientRect();
+  const px   = (wpos.x+1)/2*rect.width  + rect.left;
+  const py   = (1-(wpos.y+1)/2)*rect.height + rect.top;
+  tt.style.left = Math.min(px+14, window.innerWidth-175)+'px';
+  tt.style.top  = Math.max(py-55, 10)+'px';
+  tt.classList.remove('hidden');
+}
 
-  }
-
-  return { init, destroy };
-})();
-  return { init, destroy };
-// ═══════════════════════════════════════════════════
-})();
-// ═══════════════════════════════════════════════════
-// js/cobweb.js — Cobweb Search Interface + Cyanix AI
-// js/cobweb.js — Cobweb Search Interface + Cyanix AI
-// ═══════════════════════════════════════════════════
-
-// ═══════════════════════════════════════════════════
-
-const Cobweb = (() => {
-
-const Cobweb = (() => {
-
-  // ── Category Colors ───────────────────────────────
-  // ── Category Colors ───────────────────────────────
-  const CAT_COLORS = {
-  const CAT_COLORS = {
-    social:    '#ff6b6b',
-    social:    '#ff6b6b',
-    ai:        '#00f5ff',
-    ai:        '#00f5ff',
-    gaming:    '#a855f7',
-    gaming:    '#a855f7',
-    news:      '#f59e0b',
-    news:      '#f59e0b',
-    education: '#3b82f6',
-    education: '#3b82f6',
-    ecommerce: '#f97316',
-    ecommerce: '#f97316',
-    startups:  '#10b981',
-    startups:  '#10b981',
-    other:     '#94a3b8',
-    other:     '#94a3b8',
-    center:    '#ffffff',
-    center:    '#ffffff',
-  };
-  };
+// Counter animation
+function animCounter(id, target, ms) {
+  const el = document.getElementById(id); if(!el) return;
+  const start = performance.now();
+  (function step(now) {
+    const p = Math.min((now-start)/ms,1);
+    el.textContent = Math.floor(target*(1-Math.pow(1-p,3))).toLocaleString();
+    if(p<1) requestAnimationFrame(step);
+  })(performance.now());
+}
 
 
-  // ── State ─────────────────────────────────────────
-  // ── State ─────────────────────────────────────────
-  let bgCanvas, bgCtx, bgAnimId;
-  let bgCanvas, bgCtx, bgAnimId;
-  let svg, linkGroup, nodeGroup;
-  let svg, linkGroup, nodeGroup;
-  let simulation = null;
-  let simulation = null;
-  let currentNodes = [], currentLinks = [];
-  let currentNodes = [], currentLinks = [];
-  let W, H;
-  let W, H;
+// ══════════════════════════════════════════════════
+// COBWEB + SEARCH
+// ══════════════════════════════════════════════════
+let _cwSim     = null;
+let _cwNodes   = [], _cwLinks = [];
+let _cwW       = window.innerWidth, _cwH = window.innerHeight;
+let _bgParts   = [];
+let _bgAnimId  = null;
+let _cobwebReady = false;
 
+function cobwebInit() {
+  if (_cobwebReady) return;
+  _cobwebReady = true;
 
-  // ── Init ──────────────────────────────────────────
-  // ── Init ──────────────────────────────────────────
-  function init() {
-  function init() {
-    _initBgParticles();
-    _initBgParticles();
-    _initSVG();
-    _initSVG();
-    _bindUI();
-    _bindUI();
-    _resize();
-    _resize();
-    window.addEventListener('resize', _resize);
-  }
-    window.addEventListener('resize', _resize);
+  _cwW = window.innerWidth;
+  _cwH = window.innerHeight;
 
-  }
+  _bgInit();
+  _cwBindUI();
+  window.addEventListener('resize', _cwResize);
+}
 
-  // ── Background Particles ──────────────────────────
-  // ── Background Particles ──────────────────────────
-  function _initBgParticles() {
-  function _initBgParticles() {
-    bgCanvas = document.getElementById('cobweb-bg-canvas');
-    bgCanvas = document.getElementById('cobweb-bg-canvas');
-    bgCtx    = bgCanvas.getContext('2d');
-    bgCtx    = bgCanvas.getContext('2d');
-    bgCanvas.width  = window.innerWidth;
-    bgCanvas.width  = window.innerWidth;
-    bgCanvas.height = window.innerHeight;
-    bgCanvas.height = window.innerHeight;
+// ── Background particles ──────────────────────────
+function _bgInit() {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  canvas.width  = _cwW;
+  canvas.height = _cwH;
+  const ctx = canvas.getContext('2d');
 
+  _bgParts = Array.from({length:110}, () => ({
+    x:Math.random()*_cwW, y:Math.random()*_cwH,
+    vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+    r:Math.random()*1.4+.4, a:Math.random()*.35+.08,
+  }));
 
-    const particles = Array.from({ length: 120 }, () => ({
-    const particles = Array.from({ length: 120 }, () => ({
-      x: Math.random() * bgCanvas.width,
-      x: Math.random() * bgCanvas.width,
-      y: Math.random() * bgCanvas.height,
-      y: Math.random() * bgCanvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      r: Math.random() * 1.5 + 0.5,
-      r: Math.random() * 1.5 + 0.5,
-      alpha: Math.random() * 0.4 + 0.1,
-      alpha: Math.random() * 0.4 + 0.1,
-    }));
-
-    }));
-
-    function drawBg() {
-    function drawBg() {
-      bgAnimId = requestAnimationFrame(drawBg);
-      bgAnimId = requestAnimationFrame(drawBg);
-      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-
-
-      particles.forEach(p => {
-      particles.forEach(p => {
-        p.x += p.vx;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.y += p.vy;
-        if (p.x < 0) p.x = bgCanvas.width;
-        if (p.x < 0) p.x = bgCanvas.width;
-        if (p.x > bgCanvas.width) p.x = 0;
-        if (p.x > bgCanvas.width) p.x = 0;
-        if (p.y < 0) p.y = bgCanvas.height;
-        if (p.y < 0) p.y = bgCanvas.height;
-        if (p.y > bgCanvas.height) p.y = 0;
-
-        if (p.y > bgCanvas.height) p.y = 0;
-
-        bgCtx.beginPath();
-        bgCtx.beginPath();
-        bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        bgCtx.fillStyle = `rgba(0,245,255,${p.alpha})`;
-        bgCtx.fillStyle = `rgba(0,245,255,${p.alpha})`;
-        bgCtx.fill();
-        bgCtx.fill();
-      });
-      });
-
-
-      // Draw faint connecting lines between nearby particles
-      // Draw faint connecting lines between nearby particles
-      for (let i = 0; i < particles.length; i++) {
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dy = particles[i].y - particles[j].y;
-          const d  = Math.sqrt(dx*dx + dy*dy);
-          const d  = Math.sqrt(dx*dx + dy*dy);
-          if (d < 80) {
-          if (d < 80) {
-            bgCtx.beginPath();
-            bgCtx.beginPath();
-            bgCtx.moveTo(particles[i].x, particles[i].y);
-            bgCtx.moveTo(particles[i].x, particles[i].y);
-            bgCtx.lineTo(particles[j].x, particles[j].y);
-            bgCtx.lineTo(particles[j].x, particles[j].y);
-            bgCtx.strokeStyle = `rgba(0,245,255,${0.06 * (1 - d / 80)})`;
-            bgCtx.strokeStyle = `rgba(0,245,255,${0.06 * (1 - d / 80)})`;
-            bgCtx.lineWidth = 0.5;
-            bgCtx.lineWidth = 0.5;
-            bgCtx.stroke();
-            bgCtx.stroke();
-          }
-          }
-        }
+  function draw() {
+    _bgAnimId = requestAnimationFrame(draw);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    _bgParts.forEach(p => {
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0) p.x=canvas.width; if(p.x>canvas.width)  p.x=0;
+      if(p.y<0) p.y=canvas.height; if(p.y>canvas.height) p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,245,255,${p.a})`; ctx.fill();
+    });
+    // Connection lines
+    for(let i=0;i<_bgParts.length;i++) {
+      for(let j=i+1;j<_bgParts.length;j++) {
+        const d=Math.hypot(_bgParts[i].x-_bgParts[j].x,_bgParts[i].y-_bgParts[j].y);
+        if(d<75) {
+          ctx.beginPath();
+          ctx.moveTo(_bgParts[i].x,_bgParts[i].y);
+          ctx.lineTo(_bgParts[j].x,_bgParts[j].y);
+          ctx.strokeStyle=`rgba(0,245,255,${.055*(1-d/75)})`;
+          ctx.lineWidth=.5; ctx.stroke();
         }
       }
-      }
-    }
-    }
-    drawBg();
-    drawBg();
-  }
-
-  }
-
-  // ── SVG Init ──────────────────────────────────────
-  // ── SVG Init ──────────────────────────────────────
-  function _initSVG() {
-  function _initSVG() {
-    svg       = d3.select('#cobweb-svg');
-    svg       = d3.select('#cobweb-svg');
-    linkGroup = svg.select('#cobweb-links');
-    linkGroup = svg.select('#cobweb-links');
-    nodeGroup = svg.select('#cobweb-nodes');
-    nodeGroup = svg.select('#cobweb-nodes');
-  }
-  }
-
-
-  // ── Resize ────────────────────────────────────────
-  // ── Resize ────────────────────────────────────────
-  function _resize() {
-  function _resize() {
-    W = window.innerWidth;
-    W = window.innerWidth;
-    H = window.innerHeight;
-    H = window.innerHeight;
-    if (bgCanvas) {
-    if (bgCanvas) {
-      bgCanvas.width  = W;
-      bgCanvas.width  = W;
-      bgCanvas.height = H;
-    }
-      bgCanvas.height = H;
-    }
-    svg.attr('width', W).attr('height', H);
-    svg.attr('width', W).attr('height', H);
-    if (simulation) {
-    if (simulation) {
-      simulation.force('center', d3.forceCenter(W / 2, H / 2));
-      simulation.force('center', d3.forceCenter(W / 2, H / 2));
-      simulation.alpha(0.3).restart();
-      simulation.alpha(0.3).restart();
     }
   }
+  draw();
+}
+
+function _cwResize() {
+  _cwW = window.innerWidth; _cwH = window.innerHeight;
+  const canvas = document.getElementById('bg-canvas');
+  if(canvas) { canvas.width=_cwW; canvas.height=_cwH; }
+  d3.select('#cobweb-svg').attr('width',_cwW).attr('height',_cwH);
+  if(_cwSim) { _cwSim.force('center',d3.forceCenter(_cwW/2,_cwH/2)); _cwSim.alpha(.3).restart(); }
+}
+
+// ── UI bindings ───────────────────────────────────
+function _cwBindUI() {
+  const input  = document.getElementById('search-input');
+  const btn    = document.getElementById('search-btn');
+  const reset  = document.getElementById('reset-btn');
+  const close  = document.getElementById('ni-close');
+
+  btn.addEventListener('click', _doSearch);
+  input.addEventListener('keydown', e => { if(e.key==='Enter') _doSearch(); });
+  document.querySelectorAll('.qtag').forEach(t => {
+    t.addEventListener('click', () => { input.value=t.dataset.q; _doSearch(); });
+  });
+  reset.addEventListener('click', _resetSearch);
+  close.addEventListener('click', () => { document.getElementById('node-info').style.display='none'; });
+}
+
+// ── Search ────────────────────────────────────────
+async function _doSearch() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+
+  showEl('loading-wrap');
+  document.getElementById('ai-bar').style.display='none';
+  document.getElementById('node-info').style.display='none';
+  document.getElementById('search-wrap').classList.add('active');
+  _cwClear();
+
+  try {
+    const data = await _callSearchFn(query);
+    _cwRender(query, data);
+    if (data.answer) {
+      document.getElementById('ai-text').textContent = data.answer;
+      document.getElementById('ai-bar').style.display = 'block';
     }
-
+  } catch(err) {
+    console.error('Search error:', err);
+    document.getElementById('ai-text').textContent = '⚠ ' + (err.message || 'Connection lost. Check your edge function is deployed.');
+    document.getElementById('ai-bar').style.display = 'block';
+  } finally {
+    hideEl('loading-wrap');
   }
+}
 
-  // ── UI Bindings ───────────────────────────────────
-  // ── UI Bindings ───────────────────────────────────
-  function _bindUI() {
-  function _bindUI() {
-    const input  = document.getElementById('search-input');
-    const input  = document.getElementById('search-input');
-    const btn    = document.getElementById('search-btn');
-    const btn    = document.getElementById('search-btn');
-    const newBtn = document.getElementById('new-search-btn');
-    const newBtn = document.getElementById('new-search-btn');
+// ── Call search edge function ─────────────────────
+async function _callSearchFn(query) {
+  if (!_session) throw new Error('Not signed in');
+  const token = _session.access_token;
 
+  const res = await fetch(SEARCH_FUNC_URL, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey':        SUPABASE_ANON,
+    },
+    body: JSON.stringify({ query }),
+  });
 
-    btn.addEventListener('click', _doSearch);
-    btn.addEventListener('click', _doSearch);
-    input.addEventListener('keydown', e => {
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') _doSearch();
-      if (e.key === 'Enter') _doSearch();
-    });
-
-    });
-
-    document.querySelectorAll('.quick-tag').forEach(tag => {
-    document.querySelectorAll('.quick-tag').forEach(tag => {
-      tag.addEventListener('click', () => {
-      tag.addEventListener('click', () => {
-        input.value = tag.dataset.q;
-        input.value = tag.dataset.q;
-        _doSearch();
-        _doSearch();
-      });
-      });
-    });
-    });
-
-
-    newBtn.addEventListener('click', _resetSearch);
-    newBtn.addEventListener('click', _resetSearch);
-
-
-    document.getElementById('node-panel-close').addEventListener('click', () => {
-    document.getElementById('node-panel-close').addEventListener('click', () => {
-      document.getElementById('node-panel').classList.add('hidden');
-      document.getElementById('node-panel').classList.add('hidden');
-    });
+  if (!res.ok) {
+    const txt = await res.text().catch(()=>'');
+    throw new Error(`Edge function returned ${res.status}: ${txt.slice(0,120)}`);
   }
-    });
-
-  }
-
-  // ── Search ────────────────────────────────────────
-  // ── Search ────────────────────────────────────────
-  async function _doSearch() {
-  async function _doSearch() {
-    const query = document.getElementById('search-input').value.trim();
-    const query = document.getElementById('search-input').value.trim();
-    if (!query) return;
-    if (!query) return;
-
-
-    // Show loading, hide others
-    // Show loading, hide others
-    document.getElementById('cobweb-loading').classList.remove('hidden');
-    document.getElementById('cobweb-loading').classList.remove('hidden');
-    document.getElementById('ai-answer').classList.add('hidden');
-    document.getElementById('ai-answer').classList.add('hidden');
-    document.getElementById('node-panel').classList.add('hidden');
-    document.getElementById('node-panel').classList.add('hidden');
-    document.getElementById('search-core').classList.add('search-active');
-    document.getElementById('search-core').classList.add('search-active');
-
-
-    // Clear previous graph
-    // Clear previous graph
-    _clearGraph();
-    _clearGraph();
-
-
-    try {
-    try {
-      const result = await _callCyanixAI(query);
-      const result = await _callCyanixAI(query);
-      _renderGraph(query, result);
-      _renderGraph(query, result);
-      _showAnswer(result.answer || '');
-      _showAnswer(result.answer || '');
-    } catch (err) {
-    } catch (err) {
-      console.error('Cyanix AI error:', err);
-      console.error('Cyanix AI error:', err);
-      _showAnswer('Connection lost in the void. Try again 🌌');
-      _showAnswer('Connection lost in the void. Try again 🌌');
-    } finally {
-    } finally {
-      document.getElementById('cobweb-loading').classList.add('hidden');
-      document.getElementById('cobweb-loading').classList.add('hidden');
-    }
-    }
-  }
-  }
-
-
-  // ── Call Supabase Edge Function ────────────────────
-  // ── Call Supabase Edge Function ────────────────────
-  async function _callCyanixAI(query) {
-  async function _callCyanixAI(query) {
-    const user   = Auth.getUser();
-    const user   = Auth.getUser();
-    const client = Auth.getClient();
-    const client = Auth.getClient();
-
-
-    // Get session token for auth header
-    // Get session token for auth header
-    const { data: { session } } = await client.auth.getSession();
-    const { data: { session } } = await client.auth.getSession();
-    const token = session?.access_token;
-    const token = session?.access_token;
-
-
-    const res = await fetch(CONFIG.EDGE_CHAT_URL, {
-    const res = await fetch(CONFIG.EDGE_CHAT_URL, {
-      method: 'POST',
-      method: 'POST',
-      headers: {
-      headers: {
-        'Content-Type':  'application/json',
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Authorization': `Bearer ${token}`,
-        'apikey':        CONFIG.SUPABASE_ANON_KEY,
-        'apikey':        CONFIG.SUPABASE_ANON_KEY,
-      },
-      },
-      body: JSON.stringify({ query }),
-      body: JSON.stringify({ query }),
-    });
-
-    });
-
-    if (!res.ok) throw new Error(`Edge function error: ${res.status}`);
-    if (!res.ok) throw new Error(`Edge function error: ${res.status}`);
-    return await res.json();
-    return await res.json();
-  }
-  }
-
-
-  // ── Render Graph ──────────────────────────────────
-  // ── Render Graph ──────────────────────────────────
-  function _renderGraph(query, data) {
-  function _renderGraph(query, data) {
-    const nodes = data.nodes || [];
-    const nodes = data.nodes || [];
-    const conns = data.connections || [];
-    const conns = data.connections || [];
-
-
-    // Build D3 nodes
-    // Build D3 nodes
-    const centerNode = {
-    const centerNode = {
-      id:       '__center__',
-      id:       '__center__',
-      label:    query.length > 22 ? query.slice(0, 22) + '…' : query,
-      label:    query.length > 22 ? query.slice(0, 22) + '…' : query,
-      category: 'center',
-      category: 'center',
-      isCenter: true,
-      isCenter: true,
-      fx:       W / 2,
-      fx:       W / 2,
-      fy:       H / 2,
-      fy:       H / 2,
-    };
-
-    };
-
-    const siteNodes = nodes.map(n => ({
-    const siteNodes = nodes.map(n => ({
-      ...n,
-      ...n,
-      isCenter: false,
-      isCenter: false,
-    }));
-
-    }));
-
-    currentNodes = [centerNode, ...siteNodes];
-    currentNodes = [centerNode, ...siteNodes];
-
-
-    // Build D3 links
-    // Build D3 links
-    const linkSet = new Set();
-    const linkSet = new Set();
-    conns.forEach(([a, b]) => {
-    conns.forEach(([a, b]) => {
-      const key = [a, b].sort().join('::');
-      const key = [a, b].sort().join('::');
-      if (!linkSet.has(key)) {
-      if (!linkSet.has(key)) {
-        linkSet.add(key);
-        linkSet.add(key);
-        currentLinks.push({ source: a, target: b });
-        currentLinks.push({ source: a, target: b });
-      }
-      }
-    });
-
-    });
-
-    // Auto-link all sites to center
-    // Auto-link all sites to center
-    siteNodes.forEach(n => {
-    siteNodes.forEach(n => {
-      const key = ['__center__', n.id].sort().join('::');
-      const key = ['__center__', n.id].sort().join('::');
-      if (!linkSet.has(key)) {
-      if (!linkSet.has(key)) {
-        linkSet.add(key);
-        linkSet.add(key);
-        currentLinks.push({ source: '__center__', target: n.id });
-        currentLinks.push({ source: '__center__', target: n.id });
-      }
-      }
-    });
-
-    });
-
-    _runSimulation();
-    _runSimulation();
-  }
-
-  }
-
-  // ── D3 Force Simulation ───────────────────────────
-  // ── D3 Force Simulation ───────────────────────────
-  function _runSimulation() {
-  function _runSimulation() {
-    if (simulation) simulation.stop();
-    if (simulation) simulation.stop();
-
-
-    simulation = d3.forceSimulation(currentNodes)
-    simulation = d3.forceSimulation(currentNodes)
-      .force('link', d3.forceLink(currentLinks).id(d => d.id).distance(d => {
-      .force('link', d3.forceLink(currentLinks).id(d => d.id).distance(d => {
-        if (d.source.isCenter || d.target.isCenter) return 150 + Math.random() * 80;
-        if (d.source.isCenter || d.target.isCenter) return 150 + Math.random() * 80;
-        return 100 + Math.random() * 60;
-        return 100 + Math.random() * 60;
-      }).strength(0.4))
-      }).strength(0.4))
-      .force('charge', d3.forceManyBody().strength(-220))
-      .force('charge', d3.forceManyBody().strength(-220))
-      .force('center', d3.forceCenter(W / 2, H / 2))
-      .force('center', d3.forceCenter(W / 2, H / 2))
-      .force('collision', d3.forceCollide().radius(d => d.isCenter ? 40 : 30))
-      .force('collision', d3.forceCollide().radius(d => d.isCenter ? 40 : 30))
-      .alphaDecay(0.02);
-      .alphaDecay(0.02);
-
-
-    // Draw links
-    // Draw links
-    const link = linkGroup.selectAll('.cobweb-link')
-    const link = linkGroup.selectAll('.cobweb-link')
-      .data(currentLinks)
-      .data(currentLinks)
-      .join('line')
-      .join('line')
-      .attr('class', 'cobweb-link')
-      .attr('class', 'cobweb-link')
-      .attr('stroke', d => {
-      .attr('stroke', d => {
-        const src = typeof d.source === 'object' ? d.source : currentNodes.find(n => n.id === d.source);
-        const src = typeof d.source === 'object' ? d.source : currentNodes.find(n => n.id === d.source);
-        const clr = CAT_COLORS[src?.category] || CAT_COLORS.other;
-        const clr = CAT_COLORS[src?.category] || CAT_COLORS.other;
-        return clr;
-        return clr;
-      })
-      })
-      .attr('stroke-width', 1)
-      .attr('stroke-width', 1)
-      .attr('opacity', 0);
-      .attr('opacity', 0);
-
-
-    // Draw nodes
-    // Draw nodes
-    const node = nodeGroup.selectAll('.cobweb-node')
-    const node = nodeGroup.selectAll('.cobweb-node')
-      .data(currentNodes)
-      .data(currentNodes)
-      .join('g')
-      .join('g')
-      .attr('class', 'cobweb-node')
-      .attr('class', 'cobweb-node')
-      .call(
-      .call(
-        d3.drag()
-        d3.drag()
-          .on('start', (event, d) => {
-          .on('start', (event, d) => {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x; d.fy = d.y;
-            d.fx = d.x; d.fy = d.y;
-          })
-          })
-          .on('drag', (event, d) => {
-          .on('drag', (event, d) => {
-            d.fx = event.x; d.fy = event.y;
-            d.fx = event.x; d.fy = event.y;
-          })
-          })
-          .on('end', (event, d) => {
-          .on('end', (event, d) => {
-            if (!event.active) simulation.alphaTarget(0);
-            if (!event.active) simulation.alphaTarget(0);
-            if (!d.isCenter) { d.fx = null; d.fy = null; }
-            if (!d.isCenter) { d.fx = null; d.fy = null; }
-          })
-          })
-      )
-      )
-      .on('click', (event, d) => {
-      .on('click', (event, d) => {
-        event.stopPropagation();
-        event.stopPropagation();
-        if (!d.isCenter) _showNodePanel(d);
-        if (!d.isCenter) _showNodePanel(d);
-      });
-
-      });
-
-    // Circles
-    // Circles
-    node.append('circle')
-    node.append('circle')
-      .attr('r', d => d.isCenter ? 20 : _nodeRadius(d))
-      .attr('r', d => d.isCenter ? 20 : _nodeRadius(d))
-      .attr('fill', d => {
-      .attr('fill', d => {
-        const clr = CAT_COLORS[d.category] || CAT_COLORS.other;
-        const clr = CAT_COLORS[d.category] || CAT_COLORS.other;
-        return clr + '22';
-        return clr + '22';
-      })
-      })
-      .attr('stroke', d => CAT_COLORS[d.category] || CAT_COLORS.other)
-      .attr('stroke', d => CAT_COLORS[d.category] || CAT_COLORS.other)
-      .attr('stroke-width', d => d.isCenter ? 2 : 1.5)
-      .attr('stroke-width', d => d.isCenter ? 2 : 1.5)
-      .attr('filter', 'url(#glow-filter)');
-      .attr('filter', 'url(#glow-filter)');
-
-
-    // Inner dot
-    node.append('circle')
-    // Inner dot
-    node.append('circle')
-      .attr('r', d => d.isCenter ? 6 : 3)
-      .attr('r', d => d.isCenter ? 6 : 3)
-      .attr('fill', d => CAT_COLORS[d.category] || CAT_COLORS.other);
-      .attr('fill', d => CAT_COLORS[d.category] || CAT_COLORS.other);
-
-
-    // Labels
-    // Labels
-    node.append('text')
-    node.append('text')
-      .attr('class', d => `cobweb-label${d.isCenter ? ' center-label' : ''}`)
-      .attr('class', d => `cobweb-label${d.isCenter ? ' center-label' : ''}`)
-      .attr('dy', d => d.isCenter ? 36 : _nodeRadius(d) + 14)
-      .attr('dy', d => d.isCenter ? 36 : _nodeRadius(d) + 14)
-      .text(d => d.label)
-      .text(d => d.label)
-      .attr('fill', d => d.isCenter ? '#fff' : 'rgba(226,232,240,0.85)');
-      .attr('fill', d => d.isCenter ? '#fff' : 'rgba(226,232,240,0.85)');
-
-
-    // Animate in
-    // Animate in
-    node.attr('opacity', 0);
-    node.attr('opacity', 0);
-    link.attr('opacity', 0);
-    link.attr('opacity', 0);
-
-
-    simulation.on('tick', () => {
-    simulation.on('tick', () => {
-      link
-      link
-        .attr('x1', d => d.source.x)
-        .attr('x1', d => d.source.x)
-        .attr('y1', d => d.source.y)
-        .attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x)
-        .attr('x2', d => d.target.x)
-        .attr('y2', d => d.target.y);
-        .attr('y2', d => d.target.y);
-
-
-      node.attr('transform', d => `translate(${d.x},${d.y})`);
-      node.attr('transform', d => `translate(${d.x},${d.y})`);
-    });
-
-    });
-
-    // Staggered entry
-    // Staggered entry
-    simulation.on('end', () => {
-    simulation.on('end', () => {
-      node.transition().duration(600).delay((d, i) => i * 40).attr('opacity', 1);
-      node.transition().duration(600).delay((d, i) => i * 40).attr('opacity', 1);
-      link.transition().duration(800).delay(200).attr('opacity', d => {
-      link.transition().duration(800).delay(200).attr('opacity', d => {
-        const src = typeof d.source === 'object' ? d.source : null;
-        const src = typeof d.source === 'object' ? d.source : null;
-        return src?.isCenter ? 0.5 : 0.25;
-        return src?.isCenter ? 0.5 : 0.25;
-      });
-      });
-    });
-
-    });
-
-    // Force a few ticks then show
-    // Force a few ticks then show
-    for (let i = 0; i < 80; i++) simulation.tick();
-    for (let i = 0; i < 80; i++) simulation.tick();
-    simulation.on('end', null);
-    simulation.on('end', null);
-    node.transition().duration(500).delay((d, i) => i * 30).attr('opacity', 1);
-    node.transition().duration(500).delay((d, i) => i * 30).attr('opacity', 1);
-    link.transition().duration(600).delay(100).attr('opacity', d => {
-    link.transition().duration(600).delay(100).attr('opacity', d => {
-      const src = typeof d.source === 'object' ? d.source : null;
-      const src = typeof d.source === 'object' ? d.source : null;
-      return src?.isCenter ? 0.5 : 0.25;
-      return src?.isCenter ? 0.5 : 0.25;
-    });
-    });
-  }
-
-  }
-
-  function _nodeRadius(d) {
-  function _nodeRadius(d) {
-    const weight = d.weight || 5;
-    const weight = d.weight || 5;
-    return 6 + weight * 1.2;
-    return 6 + weight * 1.2;
-  }
-
-  }
-
-  // ── Node Info Panel ───────────────────────────────
-  // ── Node Info Panel ───────────────────────────────
-  function _showNodePanel(d) {
-  function _showNodePanel(d) {
-    const panel   = document.getElementById('node-panel');
-    const panel   = document.getElementById('node-panel');
-    const catEl   = document.getElementById('np-category');
-    const catEl   = document.getElementById('np-category');
-    const nameEl  = document.getElementById('np-name');
-    const nameEl  = document.getElementById('np-name');
-    const descEl  = document.getElementById('np-desc');
-    const descEl  = document.getElementById('np-desc');
-    const linkEl  = document.getElementById('np-link');
-    const linkEl  = document.getElementById('np-link');
-    const clr     = CAT_COLORS[d.category] || CAT_COLORS.other;
-
-    const clr     = CAT_COLORS[d.category] || CAT_COLORS.other;
-
-    catEl.textContent  = (d.category || 'unknown').toUpperCase();
-    catEl.textContent  = (d.category || 'unknown').toUpperCase();
-    catEl.style.color  = clr;
-    catEl.style.color  = clr;
-    nameEl.textContent = d.label;
-    nameEl.textContent = d.label;
-    nameEl.style.color = clr;
-    nameEl.style.color = clr;
-    descEl.textContent = d.description || 'No description available.';
-    descEl.textContent = d.description || 'No description available.';
-
-
-    if (d.url && d.url !== '#') {
-    if (d.url && d.url !== '#') {
-      linkEl.href            = d.url.startsWith('http') ? d.url : 'https://' + d.url;
-      linkEl.href            = d.url.startsWith('http') ? d.url : 'https://' + d.url;
-      linkEl.style.display   = 'inline-block';
-      linkEl.style.display   = 'inline-block';
-    } else {
-    } else {
-      linkEl.style.display   = 'none';
-      linkEl.style.display   = 'none';
-    }
-
-    }
-
-    panel.classList.remove('hidden');
-    panel.classList.remove('hidden');
-  }
-
-  }
-
-  // ── AI Answer ─────────────────────────────────────
-  // ── AI Answer ─────────────────────────────────────
-  function _showAnswer(text) {
-  function _showAnswer(text) {
-    if (!text) return;
-    if (!text) return;
-    const panel  = document.getElementById('ai-answer');
-    const panel  = document.getElementById('ai-answer');
-    const textEl = document.getElementById('ai-answer-text');
-    const textEl = document.getElementById('ai-answer-text');
-    textEl.textContent = text;
-    textEl.textContent = text;
-    panel.classList.remove('hidden');
-    panel.classList.remove('hidden');
-  }
-  }
-
-
-  // ── Reset ─────────────────────────────────────────
-  // ── Reset ─────────────────────────────────────────
-  function _resetSearch() {
-  function _resetSearch() {
-    document.getElementById('search-input').value = '';
-    document.getElementById('search-input').value = '';
-    document.getElementById('search-core').classList.remove('search-active');
-    document.getElementById('search-core').classList.remove('search-active');
-    document.getElementById('ai-answer').classList.add('hidden');
-    document.getElementById('ai-answer').classList.add('hidden');
-    document.getElementById('node-panel').classList.add('hidden');
-    document.getElementById('node-panel').classList.add('hidden');
-    _clearGraph();
-  }
-    _clearGraph();
-
-  }
-
-  function _clearGraph() {
-  function _clearGraph() {
-    currentNodes = [];
-    currentNodes = [];
-    currentLinks = [];
-    currentLinks = [];
-    if (simulation) { simulation.stop(); simulation = null; }
-    if (simulation) { simulation.stop(); simulation = null; }
-    linkGroup.selectAll('*').remove();
-    linkGroup.selectAll('*').remove();
-    nodeGroup.selectAll('*').remove();
-    nodeGroup.selectAll('*').remove();
-  }
-  }
-
-
-  // ── Destroy ───────────────────────────────────────
-  // ── Destroy ───────────────────────────────────────
-  function destroy() {
-  function destroy() {
-    cancelAnimationFrame(bgAnimId);
-    cancelAnimationFrame(bgAnimId);
-    if (simulation) simulation.stop();
-    window.removeEventListener('resize', _resize);
-  }
-
-  return { init, destroy };
-})();
-// ═══════════════════════════════════════════════════
-// js/main.js — App Controller
-    if (simulation) simulation.stop();
-// ═══════════════════════════════════════════════════
-
-    window.removeEventListener('resize', _resize);
-  }
-
-(function () {
-  return { init, destroy };
-})();
-  let galaxyInitialized  = false;
-// ═══════════════════════════════════════════════════
-// js/main.js — App Controller
-  let cobwebInitialized  = false;
-
-// ═══════════════════════════════════════════════════
-
-(function () {
-  // ── Boot ──────────────────────────────────────────
-  let galaxyInitialized  = false;
-  let cobwebInitialized  = false;
-
-  function boot() {
-  // ── Boot ──────────────────────────────────────────
-  function boot() {
-    // Init auth (handles Supabase + UI)
-    // Init auth (handles Supabase + UI)
-    Auth.init();
-    Auth.init();
-
-
-    // Start galaxy immediately
-    // Start galaxy immediately
-    _initGalaxy();
-    _initGalaxy();
-
-
-    // Enter button
-    // Enter button
-    document.getElementById('enter-btn').addEventListener('click', () => {
-    document.getElementById('enter-btn').addEventListener('click', () => {
-      const user = Auth.getUser();
-      const user = Auth.getUser();
-      if (user) {
-      if (user) {
-        _showCobweb(user);
-      } else {
-        _showCobweb(user);
-      } else {
-        Auth.openModal();
-        Auth.openModal();
-      }
-      }
-    });
-
-    });
-
-    // Auth events
-    // Auth events
-    window.addEventListener('auth:signin', e => {
-    window.addEventListener('auth:signin', e => {
-      Auth.closeModal();
-      Auth.closeModal();
-      _showCobweb(e.detail);
-    });
-
-      _showCobweb(e.detail);
-    });
-
-    window.addEventListener('auth:signout', () => {
-    window.addEventListener('auth:signout', () => {
-      _showGalaxy();
-      _showGalaxy();
-    });
-
-    });
-
-    // Animate stat counter
-    // Animate stat counter
-    _animateCounter('stat-sites', 0, 1847293, 2200);
-    _animateCounter('stat-sites', 0, 1847293, 2200);
-  }
-
-  }
-
-  // ── Galaxy ────────────────────────────────────────
-  // ── Galaxy ────────────────────────────────────────
-  function _initGalaxy() {
-  function _initGalaxy() {
-    if (!galaxyInitialized) {
-    if (!galaxyInitialized) {
-      // rAF ensures browser has completed layout before we read window dimensions
-      // rAF ensures browser has completed layout before we read window dimensions
-      requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        Galaxy.init();
-        Galaxy.init();
-        galaxyInitialized = true;
-        galaxyInitialized = true;
-      });
-    }
-      });
-  }
-    }
-
-  }
-
-  function _showGalaxy() {
-  function _showGalaxy() {
-    const galaxyView = document.getElementById('galaxy-view');
-    const galaxyView = document.getElementById('galaxy-view');
-    const cobwebView = document.getElementById('cobweb-view');
-    const cobwebView = document.getElementById('cobweb-view');
-
-
-    cobwebView.classList.remove('active');
-    cobwebView.classList.remove('active');
-    cobwebView.classList.add('hidden');
-    cobwebView.classList.add('hidden');
-
-
-    requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      galaxyView.classList.remove('hidden');
-      galaxyView.classList.remove('hidden');
-      requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        galaxyView.classList.add('active');
-        galaxyView.classList.add('active');
-      });
-      });
-    });
-    });
-  }
-
-  }
-  // ── Cobweb ────────────────────────────────────────
-
-  // ── Cobweb ────────────────────────────────────────
-  function _showCobweb(user) {
-  function _showCobweb(user) {
-    const galaxyView = document.getElementById('galaxy-view');
-    const galaxyView = document.getElementById('galaxy-view');
-    const cobwebView = document.getElementById('cobweb-view');
-
-    const cobwebView = document.getElementById('cobweb-view');
-
-    // Update user display
-    // Update user display
-    const emailEl = document.getElementById('user-email-display');
-    const emailEl = document.getElementById('user-email-display');
-    if (emailEl && user?.email) {
-    if (emailEl && user?.email) {
-      emailEl.textContent = user.email;
-      emailEl.textContent = user.email;
-    }
-
-    }
-
-    // Transition
-    // Transition
-    galaxyView.classList.remove('active');
-    galaxyView.classList.remove('active');
-    setTimeout(() => {
-    setTimeout(() => {
-      galaxyView.classList.add('hidden');
-      galaxyView.classList.add('hidden');
-
-
-      cobwebView.classList.remove('hidden');
-      cobwebView.classList.remove('hidden');
-      requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        cobwebView.classList.add('active');
-      });
-
-        cobwebView.classList.add('active');
-      });
-
-      // Init cobweb once
-      // Init cobweb once
-      if (!cobwebInitialized) {
-      if (!cobwebInitialized) {
-        Cobweb.init();
-        cobwebInitialized = true;
-        Cobweb.init();
-      }
-        cobwebInitialized = true;
-      }
-    }, 600);
-    }, 600);
-  }
-  }
-
-
-  // ── Counter Animation ─────────────────────────────
-  // ── Counter Animation ─────────────────────────────
-  function _animateCounter(id, from, to, duration) {
-  function _animateCounter(id, from, to, duration) {
-    const el    = document.getElementById(id);
-    const el    = document.getElementById(id);
-    if (!el) return;
-    if (!el) return;
-    const start = performance.now();
-    const start = performance.now();
-    function step(now) {
-    function step(now) {
-      const t   = Math.min((now - start) / duration, 1);
-      const t   = Math.min((now - start) / duration, 1);
-      const val = Math.floor(from + (to - from) * _easeOut(t));
-      const val = Math.floor(from + (to - from) * _easeOut(t));
-      el.textContent = val.toLocaleString();
-      el.textContent = val.toLocaleString();
-      if (t < 1) requestAnimationFrame(step);
-      if (t < 1) requestAnimationFrame(step);
-    }
-    }
-    requestAnimationFrame(step);
-    requestAnimationFrame(step);
-  }
-
-  }
-
-  function _easeOut(t) {
-  function _easeOut(t) {
-    return 1 - Math.pow(1 - t, 3);
-    return 1 - Math.pow(1 - t, 3);
-  }
-
-  }
-
-  // ── Start ─────────────────────────────────────────
-  // ── Start ─────────────────────────────────────────
-  if (document.readyState === 'loading') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-    document.addEventListener('DOMContentLoaded', boot);
+  return res.json();
+}
+
+// ── D3 force graph ────────────────────────────────
+function _cwRender(query, data) {
+  const nodes = data.nodes || [];
+  const conns = data.connections || [];
+
+  const center = {
+    id:'__q__', label: query.length>24 ? query.slice(0,24)+'…' : query,
+    category:'center', isCenter:true, fx:_cwW/2, fy:_cwH/2,
+  };
+  const siteNodes = nodes.map(n => ({ ...n, isCenter:false }));
+  _cwNodes = [center, ...siteNodes];
+
+  const seen = new Set();
+  _cwLinks = [];
+
+  // Cross-links from AI
+  conns.forEach(([a,b]) => {
+    const k = [a,b].sort().join('||');
+    if (!seen.has(k)) { seen.add(k); _cwLinks.push({source:a,target:b}); }
+  });
+
+  // All sites to center
+  siteNodes.forEach(n => {
+    const k = ['__q__',n.id].sort().join('||');
+    if (!seen.has(k)) { seen.add(k); _cwLinks.push({source:'__q__',target:n.id}); }
+  });
+
+  _cwSimulate();
+}
+
+function _cwSimulate() {
+  if (_cwSim) _cwSim.stop();
+
+  const svg  = d3.select('#cobweb-svg');
+  const linG = svg.select('#links-g');
+  const nodG = svg.select('#nodes-g');
+
+  svg.attr('width',_cwW).attr('height',_cwH);
+
+  _cwSim = d3.forceSimulation(_cwNodes)
+    .force('link',      d3.forceLink(_cwLinks).id(d=>d.id).distance(d=>(d.source.isCenter||d.target.isCenter)?155:105).strength(.4))
+    .force('charge',    d3.forceManyBody().strength(-200))
+    .force('center',    d3.forceCenter(_cwW/2,_cwH/2))
+    .force('collision', d3.forceCollide().radius(d=>d.isCenter?42:28))
+    .alphaDecay(.025);
+
+  const link = linG.selectAll('.cw-link')
+    .data(_cwLinks).join('line')
+    .attr('class','cw-link')
+    .attr('stroke', d => {
+      const s = typeof d.source==='object' ? d.source : _cwNodes.find(n=>n.id===d.source);
+      return CAT_COLORS[s?.category] || CAT_COLORS.other;
+    })
+    .attr('stroke-width', 1).attr('opacity', 0);
+
+  const node = nodG.selectAll('.cw-node')
+    .data(_cwNodes).join('g')
+    .attr('class','cw-node')
+    .call(d3.drag()
+      .on('start', (ev,d) => { if(!ev.active) _cwSim.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (ev,d) => { d.fx=ev.x; d.fy=ev.y; })
+      .on('end',   (ev,d) => { if(!ev.active) _cwSim.alphaTarget(0); if(!d.isCenter){d.fx=null;d.fy=null;} })
+    )
+    .on('click', (ev,d) => { ev.stopPropagation(); if(!d.isCenter) _showNodeInfo(d); });
+
+  node.append('circle')
+    .attr('r', d => d.isCenter?22:_nRadius(d))
+    .attr('fill', d => (CAT_COLORS[d.category]||CAT_COLORS.other)+'22')
+    .attr('stroke', d => CAT_COLORS[d.category]||CAT_COLORS.other)
+    .attr('stroke-width', d => d.isCenter?2:1.5)
+    .attr('filter', 'url(#glow)');
+
+  node.append('circle')
+    .attr('r', d => d.isCenter?7:3.5)
+    .attr('fill', d => CAT_COLORS[d.category]||CAT_COLORS.other);
+
+  node.append('text')
+    .attr('class', d => d.isCenter?'cw-label-center':'cw-label')
+    .attr('dy', d => d.isCenter?38:_nRadius(d)+14)
+    .text(d => d.label);
+
+  // Run ticks then reveal
+  for(let i=0;i<100;i++) _cwSim.tick();
+  _cwSim.on('tick', () => {
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+  node.transition().duration(500).delay((_,i)=>i*25).attr('opacity',1);
+  link.transition().duration(700).delay(150).attr('opacity',d=>{
+    const s=typeof d.source==='object'?d.source:null;
+    return s?.isCenter?.5:.22;
+  });
+}
+
+function _nRadius(d) { return 6 + (d.weight||5)*1.1; }
+
+function _showNodeInfo(d) {
+  const clr = CAT_COLORS[d.category]||CAT_COLORS.other;
+  document.getElementById('ni-cat').textContent  = (d.category||'other').toUpperCase();
+  document.getElementById('ni-cat').style.color  = clr;
+  document.getElementById('ni-name').textContent = d.label;
+  document.getElementById('ni-name').style.color = clr;
+  document.getElementById('ni-desc').textContent = d.description||'No description available.';
+  const lnk = document.getElementById('ni-link');
+  if (d.url && d.url!=='#') {
+    lnk.href = d.url.startsWith('http')?d.url:'https://'+d.url;
+    lnk.style.display='inline-block';
   } else {
-  } else {
-    boot();
-    boot();
+    lnk.style.display='none';
   }
-  }
-})();
-})();
+  document.getElementById('node-info').style.display='block';
+}
+
+function _resetSearch() {
+  document.getElementById('search-input').value='';
+  document.getElementById('search-wrap').classList.remove('active');
+  document.getElementById('ai-bar').style.display='none';
+  document.getElementById('node-info').style.display='none';
+  _cwClear();
+}
+
+function _cwClear() {
+  _cwNodes=[]; _cwLinks=[];
+  if(_cwSim) { _cwSim.stop(); _cwSim=null; }
+  d3.select('#links-g').selectAll('*').remove();
+  d3.select('#nodes-g').selectAll('*').remove();
+}
+
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+function showMsg(el, msg) { el.textContent=msg; el.classList.remove('hidden'); }
+function hideEl(id) {
+  const el = typeof id==='string' ? document.getElementById(id) : id;
+  if (el) el.style.display='none';
+}
+function showEl(id) {
+  const el = typeof id==='string' ? document.getElementById(id) : id;
+  if (el) el.style.display='flex';
+}
+
+
+// ══════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  sbInit();
+  authBindUI();
+
+  // Galaxy starts after first paint
+  requestAnimationFrame(() => {
+    galaxyInit();
+    animCounter('counter', 1847293, 2400);
+  });
+});
